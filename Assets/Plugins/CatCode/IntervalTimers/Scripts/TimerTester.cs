@@ -41,21 +41,21 @@ namespace CatCode.Timers
 
             var timer = DeltaTimeTimer.Create(interval, getDeltaTime, loopCount);
 
-            timer.Elapsed += () => { Debug.Log($"Elapsed at {Time.time}. Ratio : {timer.Data.ElapsedTime / timer.Data.Interval}"); };
+            timer.Elapsed += () => Debug.Log($"Elapsed at {Time.time}");
             timer.Started += () => Debug.Log("Timer started");
             timer.Stopped += () => Debug.Log("Timer stopped");
             timer.Completed += () => Debug.Log("Tier finished");
 
-            // Start the timer
+            // Start or resume the timer
             timer.Start();
 
             timer.Data.Interval = interval * 2;
-            timer.Data.ElapsedTime = interval / 2;
+            timer.Data.ElapsedTime += interval;
 
-            // остановка таймера с возможность продолжить его работу
+            // Stop the timer, with the ability to resume.
             timer.Stop();
 
-            // остановка таймера и сброс значений
+            // Stop and reset the timer
             timer.Reset();
         }
 
@@ -73,17 +73,17 @@ namespace CatCode.Timers
             timer.Stopped += () => Debug.Log("Timer stopped");
             timer.Completed += () => Debug.Log("Tier finished");
 
-            // Start the timer
+            // Start or resume the timer
             timer.Start();
 
             // Возможность в любой момент поменять значения таймера
             timer.Data.Interval = interval * 2;
             timer.Data.LastTime = GameWorldTime.GetTime() + 10;
 
-            // остановка таймера с возможность продолжить его работу
+            // Stop the timer, with the ability to resume.
             timer.Stop();
 
-            // остановка таймера и сброс значений
+            // Stop and reset the timer
             timer.Reset();
         }
 
@@ -101,17 +101,17 @@ namespace CatCode.Timers
             timer.Stopped += () => Debug.Log("Timer stopped");
             timer.Completed += () => Debug.Log("Tier finished");
 
-            // Start the timer
+            // Start or resume the timer
             timer.Start();
 
             // Возможность в любой момент поменять значения таймера
             timer.Data.Interval = interval * 2;
             timer.Data.TotalTicks += 10;
 
-            // остановка таймера с возможность продолжить его работу
+            // Stop the timer, with the ability to resume.
             timer.Stop();
 
-            // остановка таймера и сброс значений
+            // Stop and reset the timer
             timer.Reset();
         }
 
@@ -123,19 +123,34 @@ namespace CatCode.Timers
             _resetButton.onClick.AddListener(ResetTimers);
 
             _deltaTimeTimer = DeltaTimeTimer.Create(_interval, _loops, _multiInvoke);
-            _deltaTimeTimer.Elapsed += () => { Debug.Log("DeltaTime - " + Time.time + "; Elapsed - " + _deltaTimeTimer.Data.ElapsedTime / _deltaTimeTimer.Data.Interval); };
+            _deltaTimeTimer.Elapsed += () =>
+            {
+                Debug.Log($"DeltaTime - {Time.time}" +
+                $"; Elapsed - {_deltaTimeTimer.Data.ElapsedTime}" +
+                $"; TicksPerFrame - {_deltaTimeTimer.TickData.TickNumber}/{_deltaTimeTimer.TickData.TicksPerFrame}");
+            };
             _deltaTimeTimer.Started += () => { Debug.Log("DeltaTime Started - " + Time.time); };
             _deltaTimeTimer.Stopped += () => { Debug.Log("DeltaTime Stopped - " + Time.time); };
             _deltaTimeTimer.Completed += () => { Debug.Log("DeltaTime Completed - " + Time.time); };
 
             _realtimeTimer = RealtimeTimer.Create(_interval, _loops, _multiInvoke);
-            _realtimeTimer.Elapsed += () => { Debug.Log("Realtime - " + Time.time + "; LastTime - " + _realtimeTimer.Data.LastTime); };
+            _realtimeTimer.Elapsed += () =>
+            {
+                Debug.Log($"Realtime - {Time.time}" +
+                $"; LastTime - {_realtimeTimer.Data.LastTime}" +
+                $"; TicksPerFrame - {_realtimeTimer.TickData.TickNumber}/{_realtimeTimer.TickData.TicksPerFrame}");
+            };
             _realtimeTimer.Started += () => { Debug.Log("Realtime Started - " + Time.time); };
             _realtimeTimer.Stopped += () => { Debug.Log("Realtime Stopped - " + Time.time); };
             _realtimeTimer.Completed += () => { Debug.Log("Realtime Completed - " + Time.time); };
 
             _dateTimeTimer = DateTimeTimer.Create(TimeSpan.FromSeconds(_interval), _loops, _multiInvoke);
-            _dateTimeTimer.Elapsed += () => { Debug.Log("DateTime - " + DateTime.Now.ToString("mm:ss.fff")); };
+            _dateTimeTimer.Elapsed += () =>
+            {
+                Debug.Log($"DateTime - {DateTime.Now:mm:ss.fff}" +
+                $"; LastTime - {_dateTimeTimer.Data.LastTime:mm:ss.fff}" +
+                $"; TicksPerFrame - {_dateTimeTimer.TickData.TickNumber}/{_dateTimeTimer.TickData.TicksPerFrame}");
+            };
             _dateTimeTimer.Started += () => { Debug.Log("DateTime Started - " + DateTime.Now.ToString("mm:ss.fff")); };
             _dateTimeTimer.Stopped += () => { Debug.Log("DateTime Stopped - " + DateTime.Now.ToString("mm:ss.fff")); };
             _dateTimeTimer.Completed += () => { Debug.Log("DateTime Completed - " + DateTime.Now.ToString("mm:ss.fff")); };
@@ -154,6 +169,7 @@ namespace CatCode.Timers
                 var deltaTimeData = _deltaTimeTimer.Data;
                 deltaTimeData.Interval = _interval;
                 deltaTimeData.TotalTicks = _loops;
+                _deltaTimeTimer.InvokeMode = _multiInvoke;
                 _deltaTimeTimer.Start();
             }
 
@@ -162,6 +178,7 @@ namespace CatCode.Timers
                 var realtimeData = _realtimeTimer.Data;
                 realtimeData.Interval = _interval;
                 realtimeData.TotalTicks = _loops;
+                _realtimeTimer.InvokeMode = _multiInvoke;
                 _realtimeTimer.Start();
             }
 
@@ -170,6 +187,7 @@ namespace CatCode.Timers
                 var dateTimeData = _dateTimeTimer.Data;
                 dateTimeData.Interval = TimeSpan.FromSeconds(_interval);
                 dateTimeData.TotalTicks = _loops;
+                _dateTimeTimer.InvokeMode = _multiInvoke;
                 _dateTimeTimer.Start();
             }
         }

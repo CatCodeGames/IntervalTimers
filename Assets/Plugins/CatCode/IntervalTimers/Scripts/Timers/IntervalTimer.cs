@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
+using System.Diagnostics;
 
 
 namespace CatCode.Timers
@@ -6,8 +8,13 @@ namespace CatCode.Timers
     public abstract class IntervalTimer
     {
         private TimerState _state;
-        protected Action _elapsed;
+
+        protected readonly TimerTickData _tickData = new();
+
         protected InvokeMode _invokeMode;
+        protected PlayerLoopTiming _playerLoopTiming;
+        protected TimerProcessor _processor;
+        protected Action _elapsed;
 
         public TimerState State
         {
@@ -30,7 +37,18 @@ namespace CatCode.Timers
             }
         }
 
-        public InvokeMode InvokeMode => _invokeMode;
+        public TimerTickData TickData => _tickData;
+
+        public InvokeMode InvokeMode
+        {
+            get => _invokeMode;
+            set
+            {
+                _invokeMode = value;
+                if (_processor != null)
+                    _processor.InvokeMode = _invokeMode;
+            }
+        }
 
         public event Action Started;
         public event Action Stopped;
@@ -62,20 +80,41 @@ namespace CatCode.Timers
             switch (_state)
             {
                 case TimerState.Active:
-                    OnStop();
+                    _processor.IsActive = false;
+                    _processor = null;
                     State = TimerState.Paused;
                     break;
             }
         }
 
         public void Reset()
-        {          
+        {
+            if (_processor != null)
+            {
+                _processor.IsActive = false;
+                _processor = null;
+            }
+            _tickData.Reset();
             OnReset();
+            State = TimerState.Idle;
+        }
+
+        private void OnStart()
+        {
+            _processor = GetProcessor(OnFinished);
+            _processor.InvokeMode = _invokeMode;
+            _processor.IsActive = true;
+            PlayerLoopHelper.AddAction(_playerLoopTiming, _processor);
+        }
+
+        private void OnFinished()
+        {
+            _processor = null;
+            State = TimerState.Completed;
         }
 
         protected abstract void OnFirstStart();
-        protected abstract void OnStart();
-        protected abstract void OnStop();
         protected abstract void OnReset();
+        protected abstract TimerProcessor GetProcessor(Action onFinished);
     }
 }

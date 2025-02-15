@@ -149,10 +149,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _interval: 0.005
-  _loops: 10
-  _multiInvoke: 1
-  _delta: 1
-  _realtime: 0
+  _loops: 20
+  _multiInvoke: 0
+  _delta: 0
+  _realtime: 1
   _dateTime: 0
   _deltaTimerState: 0
   _realtimeTimerState: 0

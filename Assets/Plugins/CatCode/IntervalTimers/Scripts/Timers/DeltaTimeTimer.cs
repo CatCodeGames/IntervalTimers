@@ -6,10 +6,7 @@ namespace CatCode.Timers
     public sealed class DeltaTimeTimer : IntervalTimer
     {
         private readonly DeltaTimeTimerData _data = new();
-        private DeltaTimeProcessor _processor;
-
         private Func<float> _getDeltaTime;
-        private PlayerLoopTiming _playerLoopTiming;
 
         public DeltaTimeTimerData Data => _data;
 
@@ -47,6 +44,8 @@ namespace CatCode.Timers
             _data.Interval = interval;
             _data.TotalTicks = loopCount;
 
+            _tickData.Reset();
+
             _invokeMode = invokeMode;
             _getDeltaTime = getDeltaTime;
             _playerLoopTiming = playerLoopTiming;
@@ -59,37 +58,13 @@ namespace CatCode.Timers
             _data.CompletedTicks = 0;
         }
 
-        protected override void OnStart()
-        {
-            _processor = GetProcessor();
-            _processor.IsActive = true;
-            PlayerLoopHelper.AddAction(_playerLoopTiming, _processor);
-        }
-
-        protected override void OnStop()
-        {
-            _processor.IsActive = false;
-            _processor = null;
-        }
-
         protected override void OnReset()
         {
             _data.ElapsedTime = 0;
             _data.CompletedTicks = 0;
         }
 
-        private void OnFinished()
-        {
-            _processor = null;
-            State = TimerState.Completed;
-        }
-
-        private DeltaTimeProcessor GetProcessor()
-            => _invokeMode switch
-            {
-                InvokeMode.Single => DeltaTimeSingleInvokeProcessor.Create(_data, _getDeltaTime, _elapsed, OnFinished),
-                InvokeMode.Multi => DeltaTimeMultiInvokeProcessor.Create(_data, _getDeltaTime, _elapsed, OnFinished),
-                _ => DeltaTimeSingleInvokeProcessor.Create(_data, _getDeltaTime, _elapsed, OnFinished),
-            };
+        protected override TimerProcessor GetProcessor(Action onFinished)
+            => DeltaTimeProcessor.Create(_data, _tickData, _getDeltaTime, _elapsed, onFinished);
     }
 }

@@ -3,11 +3,13 @@ using System;
 
 namespace CatCode.Timers
 {
-    public abstract class TimerProcessor : IPlayerLoopItem
+    public abstract partial class TimerProcessor : IPlayerLoopItem
     {
         public bool IsActive;
         public Action OnFinished;
         public Action OnElapsed;
+        public InvokeMode InvokeMode;
+        public TimerTickData TickData;
 
         public bool MoveNext()
         {
