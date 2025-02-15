@@ -35,89 +35,25 @@ namespace CatCode.Timers
 
         private void TestDeltaTimer()
         {
-            float interval = 0.01f;
-            int loopCount = 10;
-            Func<float> getDeltaTime = GameWorldTime.GetDeltaTime;
-
-            var timer = DeltaTimeTimer.Create(interval, getDeltaTime, loopCount);
-
-            timer.Elapsed += () => Debug.Log($"Elapsed at {Time.time}");
-            timer.Started += () => Debug.Log("Timer started");
-            timer.Stopped += () => Debug.Log("Timer stopped");
-            timer.Completed += () => Debug.Log("Tier finished");
-
-            // Start or resume the timer
-            timer.Start();
-
-            timer.Data.Interval = interval * 2;
-            timer.Data.ElapsedTime += interval;
-
-            // Stop the timer, with the ability to resume.
-            timer.Stop();
-
-            // Stop and reset the timer
-            timer.Reset();
+    float interval = 0.001f;
+    int loopCount = 5;
+    
+    var timer = RealtimeTimer.Create(interval, loopCount, invokeMode: InvokeMode.Multi);
+    timer.Started += ()=> Debug.Log($"Timer started at {Time.time}");
+    timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
+    timer.Elapsed += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.Data.LastTime}. Ticks {timer.TickData.TickNumber + 1}/{timer.TickData.TicksPerFrame}");
+    timer.Start();
         }
 
-        private void TestRealtimeTimer()
+        private void Start()
         {
-            float interval = 0.01f;
-            int loopCount = 10;
-            Func<float> getTime = GameWorldTime.GetTime;
-            InvokeMode invokeMode = InvokeMode.Multi;
-
-            var timer = RealtimeTimer.Create(interval, getTime, loopCount, invokeMode);
-
-            timer.Elapsed += () => { Debug.Log($"Elapsed at realtime {Time.time}. Calculate time - {timer.Data.LastTime}"); };
-            timer.Started += () => Debug.Log("Timer started");
-            timer.Stopped += () => Debug.Log("Timer stopped");
-            timer.Completed += () => Debug.Log("Tier finished");
-
-            // Start or resume the timer
-            timer.Start();
-
-            // Возможность в любой момент поменять значения таймера
-            timer.Data.Interval = interval * 2;
-            timer.Data.LastTime = GameWorldTime.GetTime() + 10;
-
-            // Stop the timer, with the ability to resume.
-            timer.Stop();
-
-            // Stop and reset the timer
-            timer.Reset();
-        }
-
-
-        private void TestDateTimeTimer()
-        {
-            TimeSpan interval = TimeSpan.FromSeconds(1);
-            int loopCount = 10;
-            Func<DateTime> getTime = () => DateTime.Now + TimeSpan.FromMinutes(15);
-
-            var timer = DateTimeTimer.Create(interval, getTime, loopCount);
-
-            timer.Elapsed += () => { Debug.Log($"Elapsed at realtime {Time.time}. Calculate time - {timer.Data.LastTime}"); };
-            timer.Started += () => Debug.Log("Timer started");
-            timer.Stopped += () => Debug.Log("Timer stopped");
-            timer.Completed += () => Debug.Log("Tier finished");
-
-            // Start or resume the timer
-            timer.Start();
-
-            // Возможность в любой момент поменять значения таймера
-            timer.Data.Interval = interval * 2;
-            timer.Data.TotalTicks += 10;
-
-            // Stop the timer, with the ability to resume.
-            timer.Stop();
-
-            // Stop and reset the timer
-            timer.Reset();
         }
 
 
         private void Awake()
         {
+            QualitySettings.vSyncCount = 1;
+
             _startButton.onClick.AddListener(StartTimers);
             _stopButton.onClick.AddListener(StopTimers);
             _resetButton.onClick.AddListener(ResetTimers);
@@ -125,9 +61,11 @@ namespace CatCode.Timers
             _deltaTimeTimer = DeltaTimeTimer.Create(_interval, _loops, _multiInvoke);
             _deltaTimeTimer.Elapsed += () =>
             {
-                Debug.Log($"DeltaTime - {Time.time}" +
-                $"; Elapsed - {_deltaTimeTimer.Data.ElapsedTime}" +
-                $"; TicksPerFrame - {_deltaTimeTimer.TickData.TickNumber}/{_deltaTimeTimer.TickData.TicksPerFrame}");
+                Debug.Log($"Elapsed at {Time.time}. Ticks {_deltaTimeTimer.TickData.TickNumber}/{_deltaTimeTimer.TickData.TicksPerFrame}");
+
+                //Debug.Log($"DeltaTime - {Time.time}" +
+                //$"; Elapsed - {_deltaTimeTimer.Data.ElapsedTime}" +
+                //$"; TicksPerFrame - {_deltaTimeTimer.TickData.TickNumber}/{_deltaTimeTimer.TickData.TicksPerFrame}");
             };
             _deltaTimeTimer.Started += () => { Debug.Log("DeltaTime Started - " + Time.time); };
             _deltaTimeTimer.Stopped += () => { Debug.Log("DeltaTime Stopped - " + Time.time); };
@@ -136,9 +74,11 @@ namespace CatCode.Timers
             _realtimeTimer = RealtimeTimer.Create(_interval, _loops, _multiInvoke);
             _realtimeTimer.Elapsed += () =>
             {
-                Debug.Log($"Realtime - {Time.time}" +
-                $"; LastTime - {_realtimeTimer.Data.LastTime}" +
-                $"; TicksPerFrame - {_realtimeTimer.TickData.TickNumber}/{_realtimeTimer.TickData.TicksPerFrame}");
+                var timer = _realtimeTimer;
+                Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.Data.LastTime}. Ticks {timer.TickData.TickNumber}/{timer.TickData.TicksPerFrame}");
+                //Debug.Log($"Realtime - {Time.time}" +
+                //$"; LastTime - {_realtimeTimer.Data.LastTime}" +
+                //$"; TicksPerFrame - {_realtimeTimer.TickData.TickNumber}/{_realtimeTimer.TickData.TicksPerFrame}");
             };
             _realtimeTimer.Started += () => { Debug.Log("Realtime Started - " + Time.time); };
             _realtimeTimer.Stopped += () => { Debug.Log("Realtime Stopped - " + Time.time); };
