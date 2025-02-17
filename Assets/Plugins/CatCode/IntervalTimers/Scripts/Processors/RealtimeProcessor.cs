@@ -63,22 +63,8 @@ namespace CatCode.Timers
         {
             var elapsedTime = time - Data.LastTime;
             var ticks = Mathf.FloorToInt(elapsedTime / Data.Interval);
-            var lastTime = Data.LastTime;
 
-            TickData.TicksPerFrame = ticks;
-            for (int i = 0; i < ticks; i++)
-            {
-                TickData.TickNumber = i + 1;
-                Data.LastTime = lastTime + (i + 1) * Data.Interval;
-                Data.CompletedTicks++;
-
-                OnElapsed?.Invoke();
-
-                if (!IsActive)
-                    return false;
-            }
-            TickData.Reset();
-            return true;
+            return ProcessTicks(ticks);
         }
 
         private bool LimitedMultiInvoke(float time)
@@ -93,24 +79,21 @@ namespace CatCode.Timers
             if (newCompletedTicks >= totalTicks)
             {
                 var targetTicks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                TickData.TicksPerFrame = targetTicks;
                 ProcessTicks(targetTicks);
-                TickData.Reset();
                 return false;
             }
             else
             {
-                TickData.TicksPerFrame = ticks;
-                ProcessTicks(ticks);
-                TickData.Reset();
-                return true;
+                return ProcessTicks(ticks);
             }
         }
 
-        private void ProcessTicks(int ticks)
+        private bool ProcessTicks(int ticks)
         {
             var lastTime = Data.LastTime;
+            var result = true;
 
+            TickData.TicksPerFrame = ticks;
             for (int i = 0; i < ticks; i++)
             {
                 TickData.TickNumber = i + 1;
@@ -120,9 +103,15 @@ namespace CatCode.Timers
                 OnElapsed?.Invoke();
 
                 if (!IsActive)
-                    return;
+                {
+                    result = false;
+                    break;
+                }
             }
+            TickData.Reset();
+            return result;
         }
+
 
         private bool InfinitySingleInvoke(float time)
         {
@@ -150,10 +139,8 @@ namespace CatCode.Timers
 
             var newCompletedTicks = completedTicks + ticks;
             if (newCompletedTicks >= totalTicks)
-            {
                 ticks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                time = Data.LastTime + ticks * Data.Interval;
-            }
+            time = Data.LastTime + ticks * Data.Interval;
 
             TickData.TicksPerFrame = ticks;
             TickData.TickNumber = 0;

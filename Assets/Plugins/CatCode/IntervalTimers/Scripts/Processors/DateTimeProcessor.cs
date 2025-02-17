@@ -62,22 +62,7 @@ namespace CatCode.Timers
         {
             var elapsedTime = time - Data.LastTime;
             var ticks = (int)Math.Floor(elapsedTime.TotalMilliseconds / Data.Interval.TotalMilliseconds);
-            var lastTime = Data.LastTime;
-
-            TickData.TicksPerFrame = ticks;
-            for (int i = 0; i < ticks; i++)
-            {
-                TickData.TickNumber = i + 1;
-                Data.LastTime = lastTime + (i + 1) * Data.Interval;
-                Data.CompletedTicks++;
-
-                OnElapsed?.Invoke();
-
-                if (!IsActive)
-                    return false;
-            }
-            TickData.Reset();
-            return true;
+            return ProcessTicks(ticks);
         }
 
         private bool LimitedMultiInvoke(DateTime time)
@@ -92,24 +77,21 @@ namespace CatCode.Timers
             if (newCompletedTicks >= totalTicks)
             {
                 var targetTicks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                TickData.TicksPerFrame = targetTicks;
                 ProcessTicks(targetTicks);
-                TickData.Reset();
                 return false;
             }
             else
             {
-                TickData.TicksPerFrame = ticks;
-                ProcessTicks(ticks);
-                TickData.Reset();
-                return true;
+                return ProcessTicks(ticks);
             }
         }
 
-        private void ProcessTicks(int ticks)
+        private bool ProcessTicks(int ticks)
         {
             var lastTime = Data.LastTime;
+            var result = true;
 
+            TickData.TicksPerFrame = ticks;
             for (int i = 0; i < ticks; i++)
             {
                 TickData.TickNumber = i + 1;
@@ -119,8 +101,13 @@ namespace CatCode.Timers
                 OnElapsed?.Invoke();
 
                 if (!IsActive)
-                    return;
+                {
+                    result = false;
+                    break;
+                }
             }
+            TickData.Reset();
+            return result;
         }
 
 

@@ -8,7 +8,6 @@ namespace CatCode.Timers
     public abstract class IntervalTimer
     {
         private TimerState _state;
-
         protected readonly TimerTickData _tickData = new();
 
         protected InvokeMode _invokeMode;

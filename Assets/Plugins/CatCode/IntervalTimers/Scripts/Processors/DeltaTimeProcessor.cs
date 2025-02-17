@@ -65,69 +65,50 @@ namespace CatCode.Timers
 
         private bool InfinityMultiInvoke()
         {
-            var elapsedTime = Data.ElapsedTime;
-            var interval = Data.Interval;
-
-            int ticks = Mathf.FloorToInt(elapsedTime / interval);
-            var remainingTime = elapsedTime % interval;
-
+            int ticks = Mathf.FloorToInt(Data.ElapsedTime / Data.Interval);
             TickData.TicksPerFrame = ticks;
-            for (int i = 0; i < ticks; i++)
-            {
-                TickData.TickNumber = i + 1;
-                Data.ElapsedTime = Data.Interval * (i + 1);
-                Data.CompletedTicks++;
-
-                OnElapsed?.Invoke();
-
-                if (!IsActive)
-                    return false;
-            }
-            Data.ElapsedTime = remainingTime;
-            TickData.Reset();
-            return true;
+            return ProcessTicks(ticks);
         }
 
         private bool LimitedMultiInvoke()
         {
-            var elapsedTime = Data.ElapsedTime;
-            var interval = Data.Interval;
             var completedTicks = Data.CompletedTicks;
             var totalTicks = Data.TotalTicks;
 
-            var ticks = Mathf.FloorToInt(elapsedTime / interval);
-            var remainingTime = elapsedTime % interval;
+            int ticks = Mathf.FloorToInt(Data.ElapsedTime / Data.Interval);
 
             var newCompletedTicks = completedTicks + ticks;
             if (newCompletedTicks >= totalTicks)
             {
                 var targetTicks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                TickData.TicksPerFrame = targetTicks;
                 ProcessTicks(targetTicks);
-                TickData.Reset();
                 return false;
             }
             else
             {
-                TickData.TicksPerFrame = ticks;
-                ProcessTicks(ticks);
-                Data.ElapsedTime = remainingTime;
-                TickData.Reset();
-                return true;
+                return ProcessTicks(ticks);
             }
         }
 
-        private void ProcessTicks(int ticks)
+        private bool ProcessTicks(int ticks)
         {
+            TickData.TicksPerFrame = ticks;
+            var elapsedTime = Data.ElapsedTime;
+            var result = true;
             for (int i = 0; i < ticks; i++)
             {
                 TickData.TickNumber = i + 1;
-                Data.ElapsedTime = Data.Interval * (i + 1);
+                Data.ElapsedTime = elapsedTime - Data.Interval * (i + 1);
                 Data.CompletedTicks++;
                 OnElapsed?.Invoke();
                 if (!IsActive)
+                {
+                    result = false;
                     break;
+                }
             }
+            TickData.Reset();
+            return result;
         }
 
 
@@ -142,10 +123,10 @@ namespace CatCode.Timers
             TickData.TicksPerFrame = ticks;
             TickData.TickNumber = 0;
             Data.CompletedTicks += ticks;
+            Data.ElapsedTime = remainingTime;
 
             OnElapsed?.Invoke();
 
-            Data.ElapsedTime = remainingTime;
             TickData.Reset();
             return true;
         }
@@ -170,10 +151,10 @@ namespace CatCode.Timers
             TickData.TicksPerFrame = ticks;
             TickData.TickNumber = 0;
             Data.CompletedTicks += ticks;
-
-            OnElapsed?.Invoke();                        
-
             Data.ElapsedTime = remainingTime;
+
+            OnElapsed?.Invoke();
+
             TickData.Reset();
             return Data.CompletedTicks < Data.TotalTicks;
         }
