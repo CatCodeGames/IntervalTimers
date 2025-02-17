@@ -1,5 +1,5 @@
 # 1. Description
-Timers for UniTask. Using UniTask's functionality to integrate with PlayerLoop. Featuring flexible settings and eliminating accumulation of errors in cyclic executions.\
+Timers for UniTask. Using UniTask's functionality to integrate with PlayerLoop. Featuring flexible settings and eliminating accumulation of errors in cyclic executions.
 
 ### Key Features and Advantages:
 - **Accuracy without error accumulation.**\
@@ -155,7 +155,13 @@ An example of a timer that ticks every second and stops after 10 ticks
     // Stop and reset the timer
     timer.Reset();
 ```
-
+&nbsp;
+# IntervalTimer
+## Methods
+- `Start()`: Starts the timer or resumes it after stopping. If it's the first start, parameters are initialized automatically unless marked otherwise.
+- `Stop()`: Stops the timer, keeping its current state intact.
+- `Reset()`: Stops the timer and completely resets its state.
+- `MarkAsInitialized()`: Marks the timer as initialized so it won't automatically initialize parameters on the first start.
 ## InvokeMode
 When the timer's interval is shorter than the frame time, this parameter defines how the timer will trigger events.
 ### InvokeMode.Multi
@@ -194,7 +200,7 @@ In this mode, the `Elapsed` method is called once per frame. The `TickData` prop
 
     timer.Start();
 ```
-Вывод
+Output
 ```
   Timer started at 19,02731
   Current time - 19,03973. Ticks - 2
@@ -233,7 +239,7 @@ In this mode, the `Elapsed` method is called once per frame. The `TickData` prop
  Внутренние параметры таймера, такие как прошедшее время и количество срабатываний, доступны для сохранения и создания копий.
 
 &nbsp;
-# 2. Таймера:
+# 2. Таймеры:
 
 ## 1. DeltaTimeTimer:
 - Использует разницу времени между кадрами для своих расчётов (Time.deltaTime и другие).
@@ -351,8 +357,15 @@ public static DateTimeTimer Create(TimeSpan interval, Func<DateTime> getTime, in
     // Stop and reset the timer
     timer.Reset();
 ```
+&nbsp;
+# IntervalTimer
+## Методы
+- `Start()` - Запускает таймер или продолжает его после остановки. Если это первый запуск, параметры инициализируются автоматически (если не помечено иное)
+- `Stop()` - Останавливает таймер, сохраняя текущее состояние.
+- `Reset()` - Останавливает таймер, полностью сбрасывая его текущее состояние
+- `MarkAsInitialized()` - Помечает таймер как инициализированный, чтобы при первом запуске он не инициализировал параметры автоматически.
 
-## InvokeMode
+## InvokeMode 
 Если интервал срабатывания таймера меньше, чем интервал времени между кадрами, то этот параметр определяет как таймер будет вызывать событие.
 ### InvokeMode.Multi
 В этом режиме событие `Elapsed` будет вызываться несколько раз в течении одного кадра. Свойство `TickData` позволяет получить информацию о количестве срабатываний таймера за кадр и номер текущего события.
