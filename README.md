@@ -20,148 +20,96 @@ Timers for UniTask. Using UniTask's functionality to integrate with PlayerLoop. 
  Internal parameters like elapsed time and the number of ticks are accessible, making it easy to save the state or create copies.
 
 &nbsp;
-# 2. Timers
+# 2. Example
+An example of a timer that ticks every second and stops after 10 ticks
+``` csharp
+ Func<float> getTimeFunc = GameWorldTime.GetTime;
+ 
+ // Create and init timer
+ var timer = new RealtimeTimer()
+ {
+     Interval = 1f,
+     TotalTicks = 10
+ };
+ 
+ // Set custom time function
+ timer.SetTimeFunction(getTimeFunc);
+ // Or use Time.time, Time.unscaledDeltaTime or Time.realtimeSinceStartup
+ // Default is Time.time;
+ timer.SetTimeFunction(RealtimeMode.Unscaled);
+ 
+ timer.Started += () => Debug.Log("Timer started");
+ timer.Completed += () => Debug.Log("Timer finished");
+ timer.Tick += () => Debug.Log($"Tick at {Time.time}. Scheduled time - {timer.LastTime}");
+ 
+ // Start or resume the timer
+ timer.Start();
+ 
+ // Timer properties can be changed while running.
+ timer.Interval /= 2;
+ timer.LastTime = GameWorldTime.GetTime() + 10f;
+ 
+ // The timer can be stopped and later resumed.
+ timer.Stop();
+ 
+ // Stop and reset the timer
+ timer.Reset();
+```
 
+&nbsp;
+# 3. Timers
+## IntervalTimer
+Base class for timers.
+
+### Properties
+- `Interval` - The time interval after which the timer triggers the `Tick` event.
+- `CompletedTicks` - The current number of times the timer has triggered.
+- `TotalTicks` - The total number of times the timer will trigger before stopping. `-1` indicates an infinite loop.
+- InvokeMode` - Event invocation mode for the `Tick` event. Used when the timer needs to trigger multiple times within a single frame.- `playerLoopTiming` - Determines which game loop (e.g., Update, FixedUpdate, etc.) the timer will use.
+- `State` - Timer state.
+Properties сontains information about the last trigger of the timer. If the timer can trigger multiple times within a single frame, these properties allow you to determine the number of event invocations and their order.
+- `TicksPerFrame` - The number of times the timer triggers within a single frame.
+- `TickNumber` - The sequential number of the timer trigger in `InvokeMode.Multi`; always 0 in `InvokeMode.Single`.
+### Methods
+- `Start()` - Starts or resumes the timer. If it's the first start, parameters are initialized automatically
+- `Stop()` - Stops the timer with the option to resume later.
+- `Reset()` - Stops the timer and resets its state.
+
+
+&nbsp;
 ## 1. DeltaTimeTimer
 - Uses the difference in time between frames (`Time.deltaTime` and similar) for its calculations.
 - Upon stopping and restarting, continues without accounting for the time when the timer was paused.
 
-### Creation
-``` csharp
-public static DeltaTimeTimer Create( float interval, int loopCount, InvokeMode invokeMode, bool unscaledTime, PlayerLoopTiming playerLoopTiming) 
-```
-  - `interval` - The time interval after which the timer triggers the Elapsed event.
-  - `loopCount` - The number of times the timer should trigger the Elapsed event. -1 indicates an infinite loop.
-  - `invokeMode` - Determines whether the timer can trigger the Elapsed event multiple times within a single frame or only once.
-  - `unscaledTime` - Specifies whether to use Time.unscaledDeltaTime or Time.deltaTime for time calculation.
-  - `playerLoopTiming` - Determines which game loop (e.g., Update, FixedUpdate, etc.) the timer will use.
-
-``` csharp
-public static DeltaTimeTimer Create( float interval, Func<float> getDeltaTime, int loopCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- `getDeltaTime` - A custom function that returns the interval between the current and previous frame.
-
-### Properties
-#### Data
-Contains all the working parameters of the timer.
+### Properties and methods
 - `ElapsedTime` - The time since the timer was started or last triggered.
-- `Interval` - The time interval after which the timer triggers the Elapsed event.
-- `CompletedTicks` - The current number of times the timer has triggered.
-- `TotalTicks` - The number of times the timer should trigger. -1 indicates an infinite loop.
-
-#### TickData
-Contains information about the last trigger of the timer. If the timer can trigger multiple times within a single frame, this property determines the number of event calls and their order.
-- `TicksPerFrame` - The number of times the timer triggers within a single frame.
-- `TickNumber` - The sequential number of the timer trigger in InvokeMode.Multi; always 0 in InvokeMode.Single.
-
+- `SetDeltaTimeFunction(bool unscaled)` - Specifies which type of time the timer will use: `Time.deltaTime` or `Time.unscaledDeltaTime`
+- `SetDeltaTimeFunction(Func<float> getDeltaTime)` - Sets a custom function that returns the interval between the current and previous frames.
 
 &nbsp;
-## 2. RealtimeTimer
+## 2. RealtimeTimer 
 - Uses game time (`Time.time` and similar, or a user-defined time function).
 - Upon stopping and restarting, triggers all missed events.
-- In the case of multiple events within a single frame, the timer accurately determines the time of each event using the Date.Time property.
+- In the case of multiple events within a single frame, the timer accurately determines the time of each event using the `LateTime` property.
 
-### Creation
-``` csharp
-public static RealtimeTimer Create(float interval, int loopsCount, InvokeMode invokeMode, RealtimeMode timeMode, PlayerLoopTiming playerLoopTiming)
-```
-- `interval` - The time interval after which the timer triggers the `Elapsed` event.
-- `loopCount` - The number of times the timer should trigger the `Elapsed` event. `-1` indicates an infinite loop.
-- `invokeMode` - Determines whether the timer can trigger the Elapsed event multiple times within a single frame or only once.
-- `timeMode` - Specifies the type of time used: `Time.unscaledTime`, `Time.time`, or `Time.realtimeSinceStartup`.
-- `playerLoopTiming` - Determines which game loop (e.g., Update, FixedUpdate, etc.) the timer will use.
-
-``` csharp
-public static RealtimeTimer Create(float interval, Func<float> getTime, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- `getDeltaTime`: A custom function that returns the interval between the current and previous frame.
-
-### Properties
-#### Data
-Contains all the working parameters of the timer.
+### Properties and methods
 - `LastTime` - The time of the last trigger or when the timer started.
-- `Interval` - The time interval after which the timer triggers the `Elapsed` event.
-- `CompletedTicks` - The current number of times the timer has triggered.
-- `TotalTicks` - The total number of times the timer will trigger before stopping. `-1` indicates an infinite loop.
-
-#### TickData
-Contains information about the last trigger of the timer. If the timer can trigger multiple times within a single frame, this property determines the number of event calls and their order.
-- `TicksPerFrame` - The number of times the timer triggers within a single frame.
-- `TickNumber` - The sequential number of the timer trigger in InvokeMode.Multi; always 0 in InvokeMode.Single.
-
+- `SetTimeFunction(RealtimeMode mode)` - Specifies which type of time the timer will use: `Time.time`, `Time.unscaledDeltaTime`, or `Time.realtimeSinceStartup`.
+- `SetTimeFunction(Func<float> getTime)` - Sets a custom function that returns the time.
 
 &nbsp;
-## 3. DateTimeTimer
+## 3. DateTimeTimer 
 - Uses system time (`DateTime.Now` or a user-defined function).
 - Upon stopping and restarting, triggers all missed events.
-- In the case of multiple events within a single frame, the timer accurately determines the time of each event using the Date.Time property.
-- 
-### Creation
-``` csharp
-public static DateTimeTimer Create(TimeSpan interval, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- `interval` - The time interval after which the timer triggers the `Elapsed` event.
-- `loopCount` - The number of times the timer should trigger the `Elapsed` event. `-1` indicates an infinite loop.
-- `invokeMode` - Determines whether the timer can trigger the Elapsed event multiple times within a single frame or only once.
-- `playerLoopTiming` - Determines which game loop (e.g., Update, FixedUpdate, etc.) the timer will use.
-
-``` csharp
-public static DateTimeTimer Create(TimeSpan interval, Func<DateTime> getTime, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- `getDeltaTime`: A custom function that returns the interval between the current and previous frame.
-
-### Properties
-#### Data
-Contains all the working parameters of the timer.
+- In the case of multiple events within a single frame, the timer accurately determines the time of each event using the `LateTime` property.
+  
+### Properties and methods
 - `LastTime` - The time of the last trigger or when the timer started.
-- `Interval` - The time interval after which the timer triggers the `Elapsed` event.
-- `CompletedTicks` - The current number of times the timer has triggered.
-- `TotalTicks` - The total number of times the timer will trigger before stopping. `-1` indicates an infinite loop.
-
-#### TickData
-Contains information about the last trigger of the timer. If the timer can trigger multiple times within a single frame, this property determines the number of event calls and their order.
-- `TicksPerFrame` - The number of times the timer triggers within a single frame.
-- `TickNumber` - The sequential number of the timer trigger in InvokeMode.Multi; always 0 in InvokeMode.Single.
-
+- `SetTimeFunction(Func<DateTime> getTime)` - Sets a custom function that returns the time. Default is `DateTime.Now`.
 
 &nbsp;
-# 3. Examples
-An example of a timer that ticks every second and stops after 10 ticks
-``` csharp
-    float interval = 1f;
-    int loopCount = 10;
-    // Custom time function for example.
-    Func<float> getTime = GameWorldTime.GetTime;
-    InvokeMode invokeMode = InvokeMode.Multi;
-    
-    // Create timer
-    var timer = RealtimeTimer.Create(interval, getTime, loopCount, invokeMode);
-    
-    timer.Elapsed += () => { Debug.Log($"Elapsed at realtime {Time.time}. Calculate time - {timer.Data.LastTime}"); };
-    timer.Started += () => Debug.Log("Timer started");
-    timer.Stopped += () => Debug.Log("Timer stopped");
-    timer.Completed += () => Debug.Log("Tier finished");
-    
-    // Start or resume the timer
-    timer.Start();
-    
-    // Modify timer properties
-    timer.Data.Interval = interval * 2;
-    timer.Data.LastTime = GameWorldTime.GetTime() + 10;
-    
-    // Stop the timer, with the ability to resume.
-    timer.Stop();
-    
-    // Stop and reset the timer
-    timer.Reset();
-```
-&nbsp;
-# IntervalTimer
-## Methods
-- `Start()`: Starts the timer or resumes it after stopping. If it's the first start, parameters are initialized automatically unless marked otherwise.
-- `Stop()`: Stops the timer, keeping its current state intact.
-- `Reset()`: Stops the timer and completely resets its state.
-- `MarkAsInitialized()`: Marks the timer as initialized so it won't automatically initialize parameters on the first start.
+# 4. Additional Information
+
 ## InvokeMode
 When the timer's interval is shorter than the frame time, this parameter defines how the timer will trigger events.
 ### InvokeMode.Multi
@@ -210,11 +158,6 @@ Output
 
 
 
-
-
-
-
-
 &nbsp;
 &nbsp;
 # 1. Описание 
@@ -239,132 +182,97 @@ Output
  Внутренние параметры таймера, такие как прошедшее время и количество срабатываний, доступны для сохранения и создания копий.
 
 &nbsp;
-# 2. Таймеры:
+# 2. Пример
+Пример таймера, который срабатывает каждую секунду и останавливается после 10 срабатываний.
+``` csharp
+ Func<float> getTimeFunc = GameWorldTime.GetTime;
+ 
+ // Создание и инициализация таймера.
+ var timer = new RealtimeTimer()
+ {
+     Interval = 1f,
+     TotalTicks = 10
+ };
+ 
+ // Установка пользовательской функции времени
+ timer.SetTimeFunction(getTimeFunc);
+ // Или указание одной из Time.time, Time.unscaledDeltaTime или Time.realtimeSinceStartup
+ // По умолчанию Time.time;
+ timer.SetTimeFunction(RealtimeMode.Unscaled);
+ 
+ timer.Started += () => Debug.Log("Timer started");
+ timer.Completed += () => Debug.Log("Timer finished");
+ timer.Tick += () => Debug.Log($"Tick at {Time.time}. Scheduled time - {timer.LastTime}");
+ 
+ // Запуск таймера или продолжение его работы.
+ timer.Start();
+ 
+ // Свойства таймера могут быть изменены во время его выполнения.
+ timer.Interval /= 2;
+ timer.LastTime = GameWorldTime.GetTime() + 10f;
+ 
+ // Остановка таймера с возможностью продолжения его работу позже.
+ timer.Stop();
+ 
+ // Остановка и сброс параметров таймера.
+ timer.Reset();
+```
+&nbsp;
+# 3. Таймеры
+## IntervalTimer
+Базовый класс всех таймеров.
 
-## 1. DeltaTimeTimer:
+### Cвойства
+
+- `Interval` - Интервал времени, по истечению которого таймер вызывает событие Tick.
+- `CompletedTicks` - Текущее количество срабатываний таймера.
+- `TotalTicks` - Количество раз сколько должен сработать таймер. -1 - бесконечный режим работы таймера.
+- `InvokeMode` - Режим вызова события Elapsed. В случае, если таймер должен сработать несколько раз за один кадр.
+- `PlayerLoopTimiming` - Определяет, в каком из игровых циклов (например, Update, FixedUpdate и т.д.) будет использоваться таймер.
+- `State` - Состояние таймера.
+Свойства, содержат информацию о последнем срабатывании таймера. Если таймер может сработать несколько раз в пределах одного кадра, эти свойство позволяет определить количество вызовов события и их порядок.
+- `TickIndex` - Порядковый номер срабатывания таймера в режиме InvokeMode.Multi; всегда -1 в режиме InvokeMode.Single
+- `TicksPerFrame` - Количество срабатываний таймера в пределах одного кадра.
+
+### Методы
+- `Start()` - Запуск таймера или возобновление его работы
+- `Stop()` - Остановка таймера с возможностью его последующего возобновления.
+- `Reset()` - Остановка таймера и сброс его состояния.
+
+&nbsp;
+## 1. DeltaTimeTimer
 - Использует разницу времени между кадрами для своих расчётов (Time.deltaTime и другие).
 - При остановке и последующем запуске продолжает работу без учета времени, когда таймер был остановлен.
-  
-### Создание
-``` csharp
-public static DeltaTimeTimer Create( float interval, int loopCount, InvokeMode invokeMode, bool unscaledTime, PlayerLoopTiming playerLoopTiming) 
-```
-- ```interval``` - Интервал времени, по истечению которого таймер вызывает событие ```Elapsed```.\
-- ```loopCount``` - Количество раз, которое таймер должен вызвать событие ```Elapsed```. ```-1``` - бесконечный режим работы таймера.\
-- ```invokeMode``` - Определяет, может ли таймер вызывать событие ```Elapsed``` несколько раз за один кадр или только один раз.\
-- ```unscaledTime``` - Указывает, использовать ли ```Time.unscaledDeltaTime``` или ```Time.deltaTime``` для расчета времени.\
-- ```playerLoopTiming``` - Определяет, в каком из игровых циклов (например, ```Update```, ```FixedUpdate``` и т.д.) будет использоваться таймер.
 
-``` csharp
-public static DeltaTimeTimer Create( float interval, Func<float> getDeltaTime, int loopCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- ```getDeltaTime``` - пользовательская функция, возвращающая интервал между текущим и предыдущим кадром.
-
-### Свойства
-
-#### Data
-Содержит все рабочие параметры таймера.
-- ```ElapsedTime``` - Время с момента запуска или последнего срабатывания таймера.
-- ```Interval``` - Интервал времени, по истечению которого таймер вызывает событие ```Elapsed```.
-- ```CompletedTicks``` - Текущее количество срабатываний таймера.
-- ```TotalTicks``` - Количество раз сколько должен сработать таймер. -1 - бесконечный режим работы таймера.
-
-#### TickData
-Содержит информацию о последнем срабатывании таймера. Если таймер может сработать несколько раз в пределах одного кадра, это свойство позволяет определить количество вызовов события и их порядок.
-- ```TicksPerFrame``` - Количество срабатываний таймера в пределах одного кадра.
-- ```TickNumber``` - Порядковый номер срабатывания таймера в режиме ```InvokeMode.Multi```; всегда 0 в режиме ```InvokeMode.Single```.
+### Свойства и методы
+- `ElapsedTime1 - Время с момента запуска или последнего срабатывания таймера.
+- `SetDeltaTimeFunction(bool unscaled)` - Позволяет указать какой тип времени использовать для обновления таймера: `Time.deltaTime` или `Time.unscaledDeltaTime`.
+- `SetDeltaTimeFunction(Func<float> getDeltaTime)` - Позволяет указать пользовательскую функцию, возвращающая интервал между текущим и предыдущим кадром.
 
 &nbsp;
 ## 2. RealtimeTimer 
-- Использует игровое время (Time.time и другие или пользовательскую функцию времени).
+- Использует игровое время (`Time.time` и другие или пользовательскую функцию времени).
 - При остановке и последующем запуске вызываются все пропущенные срабатывания.
-- В случае многократных срабатываний в пределах одного кадра, таймер позволяет точно определить время каждого срабатывания, используя свойство Date.Time.
-### Создание
-``` csharp
-public static RealtimeTimer Create(float interval, int loopsCount, InvokeMode invokeMode, RealtimeMode timeMode, PlayerLoopTiming playerLoopTiming)
-```
-- ```interval``` - Интервал времени, по истечению которого таймер вызывает событие ```Elapsed```.\
-- ```loopCount``` - Количество раз, которое таймер должен вызвать событие ```Elapsed```. ```-1``` - бесконечный режим работы таймера.
-- ```invokeMode``` - Определяет, может ли таймер вызывать событие ```Elapsed``` несколько раз за один кадр или только один раз.
-- ```timeMode``` - Указывает тип используемого времени : ```Time.unscaledTime```, ```Time.time``` или ```Time.realtimeSinceStartup```.
-- ```playerLoopTiming``` - Определяет, в каком из игровых циклов (например, ```Update```, ```FixedUpdate``` и т.д.) будет использоваться таймер.
+- В случае многократных срабатываний в пределах одного кадра, таймер позволяет точно определить время каждого срабатывания, используя свойство `LastTime`.
 
-``` csharp
-public static RealtimeTimer Create(float interval, Func<float> getTime, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- ```getTime``` - Пользовательская функция, возвращающая текущее игровое время.
-
-### Свойства
-#### Data
-Содержит все рабочие параметры таймера.
-- ```LastTime``` - Время последнего срабатывания таймера или время его запуска.
-- ```Interval``` - Временной интервал, по истечению которого таймер генерирует событие ```Elapsed```.
-- ```CompletedTicks``` - Текущее количество срабатываний таймера
-- ```TotalTicks``` - Общее количество срабатываний таймера до его остановки. Значение -1 указывает на бесконечный режим работы.
-
-#### TickData
-Содержит информацию о последнем срабатывании таймера. Если таймер может сработать несколько раз в пределах одного кадра, это свойство позволяет определить количество вызовов события и их порядок.
-- ```TicksPerFrame``` - Количество срабатываний таймера в пределах одного кадра;
-- ```TickNumber``` - Порядковый номер срабатывания таймера в режиме ```InvokeMode.Multi```; всегда 0 в режиме ```InvokeMode.Single```;
+### Свойства и методы
+- `LastTime` - Время последнего срабатывания таймера или время его запуска.
+- `SetTimeFunction(RealtimeMode mode)` - Позволяет указать какой тип времени используется таймером : `Time.time`, `Time.unscaledDeltaTime` или `Time.realtimeSinceStartup`
+- `SetTimeFunction(Func<float> getTime)` - Позволяет указать пользовательскую функцию, возвращающая время.
 
 &nbsp;
 ## 3. DateTimeTimer 
 - Использует системное время (DateTime.Now или пользовательскую функцию).
 - При остановке и последующем запуске вызываются все пропущенные срабатывания.
-- В случае многократных срабатываний в пределах одного кадра, таймер позволяет точно определить время каждого срабатывания, используя свойство Date.Time.
+- В случае многократных срабатываний в пределах одного кадра, таймер позволяет точно определить время каждого срабатывания, используя свойство `LastTime`.
   
-### Создание
-``` csharp
-public static DateTimeTimer Create(TimeSpan interval, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- ```interval``` - Интервал времени, по истечению которого таймер вызывает событие ```Elapsed```.\
-- ```loopCount``` - Количество раз, которое таймер должен вызвать событие ```Elapsed```. ```-1``` - бесконечный режим работы таймера.\
-- ```invokeMode``` - Определяет, может ли таймер вызывать событие ```Elapsed``` несколько раз за один кадр или только один раз.\
-- ```playerLoopTiming``` - Определяет, в каком из игровых циклов (например, ```Update```, ```FixedUpdate``` и т.д.) будет использоваться таймер.
+### Свойства и методы
+- `LastTime` - Время последнего срабатывания таймера или время его запуска.
+- `SetTimeFunction(Func<DateTime> getTime)` - Позволяет указать пользовательскую функцию, возвращающая время. По умолчанию используется `DateTime.Now`;
 
-``` csharp
-public static DateTimeTimer Create(TimeSpan interval, Func<DateTime> getTime, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-```
-- ```getTime``` - Пользовательская функция, возвращающая текущее системное время.
 
 &nbsp;
-# 3. Использование
-Пример таймера, который срабатывает каждую секунду и останавливается после 10 срабатываний.
-``` csharp
-    float interval = 1f;
-    int loopCount = 10;
-    Func<float> getTime = GameWorldTime.GetTime;
-    InvokeMode invokeMode = InvokeMode.Multi;
-    
-    // Create timer
-    var timer = RealtimeTimer.Create(interval, getTime, loopCount, invokeMode);
-    
-    timer.Elapsed += () => { Debug.Log($"Elapsed at realtime {Time.time}. Calculate time - {timer.Data.LastTime}"); };
-    timer.Started += () => Debug.Log("Timer started");
-    timer.Stopped += () => Debug.Log("Timer stopped");
-    timer.Completed += () => Debug.Log("Tier finished");
-    
-    // Start or resume the timer
-    timer.Start();
-    
-    // Modify timer properties
-    timer.Data.Interval = interval * 2;
-    timer.Data.LastTime = GameWorldTime.GetTime() + 10;
-    
-    // Stop the timer, with the ability to resume.
-    timer.Stop();
-    
-    // Stop and reset the timer
-    timer.Reset();
-```
-&nbsp;
-# IntervalTimer
-## Методы
-- `Start()` - Запускает таймер или продолжает его после остановки. Если это первый запуск, параметры инициализируются автоматически (если не помечено иное)
-- `Stop()` - Останавливает таймер, сохраняя текущее состояние.
-- `Reset()` - Останавливает таймер, полностью сбрасывая его текущее состояние
-- `MarkAsInitialized()` - Помечает таймер как инициализированный, чтобы при первом запуске он не инициализировал параметры автоматически.
-
+# 4. Дополнительно
 ## InvokeMode 
 Если интервал срабатывания таймера меньше, чем интервал времени между кадрами, то этот параметр определяет как таймер будет вызывать событие.
 ### InvokeMode.Multi
