@@ -1,25 +1,25 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
-using System.Diagnostics;
-
 
 namespace CatCode.Timers
 {
     public abstract class IntervalTimer
     {
-        private TimerState _state;
-        protected readonly TimerTickData _tickData = new();
+        private TimerState _state = TimerState.Idle;
+        protected PlayerLoopTiming _playerLoopTiming = PlayerLoopTiming.Update;
 
-        protected InvokeMode _invokeMode;
-        protected PlayerLoopTiming _playerLoopTiming;
         protected TimerProcessor _processor;
-        protected Action _elapsed;
+
+        protected readonly TimerTickData _tickData = new();
+        protected readonly TimerTickInfo _tickInfo = new();
 
         public TimerState State
         {
-            get => _state; set
+            get => _state;
+            private set
             {
-                if (_state == value) return;
+                if (_state == value)
+                    return;
                 _state = value;
                 switch (_state)
                 {
@@ -36,27 +36,46 @@ namespace CatCode.Timers
             }
         }
 
-        public TimerTickData TickData => _tickData;
+        public int TotalTicks
+        {
+            get => _tickData.TotalTicks;
+            set => _tickData.TotalTicks = value;
+        }
 
         public InvokeMode InvokeMode
         {
-            get => _invokeMode;
+            get => _tickData.InvokeMode;
+            set => _tickData.InvokeMode = value;
+        }
+
+        public PlayerLoopTiming PlayerLoopTimiming
+        {
+            get => _playerLoopTiming;
+            set => _playerLoopTiming = value;
+        }
+
+        public int CompletedTicks
+        {
+            get => _tickData.CompletedTicks;
             set
             {
-                _invokeMode = value;
-                if (_processor != null)
-                    _processor.InvokeMode = _invokeMode;
+                _tickData.CompletedTicks = value;
+                SetInitialized();
             }
         }
+
+        public int TickIndex => _tickInfo.TickIndex;
+        public int TicksPerFrame => _tickInfo.TicksPerFrame;
 
         public event Action Started;
         public event Action Stopped;
         public event Action Completed;
-        public event Action Elapsed
+        public event Action Tick
         {
-            add => _elapsed += value;
-            remove => _elapsed -= value;
+            add => _tickData.OnTick += value;
+            remove => _tickData.OnTick -= value;
         }
+
 
         public void Start()
         {
@@ -67,6 +86,7 @@ namespace CatCode.Timers
                     State = TimerState.Active;
                     OnStart();
                     break;
+                case TimerState.Initialized:
                 case TimerState.Paused:
                     State = TimerState.Active;
                     OnStart();
@@ -98,10 +118,15 @@ namespace CatCode.Timers
             State = TimerState.Idle;
         }
 
+        protected void SetInitialized()
+        {
+            if (_state == TimerState.Idle)
+                _state = TimerState.Initialized;
+        }
+
         private void OnStart()
         {
             _processor = GetProcessor(OnFinished);
-            _processor.InvokeMode = _invokeMode;
             _processor.IsActive = true;
             PlayerLoopHelper.AddAction(_playerLoopTiming, _processor);
         }

@@ -8,63 +8,48 @@ namespace CatCode.Timers
         private readonly DeltaTimeTimerData _data = new();
         private Func<float> _getDeltaTime;
 
-        public DeltaTimeTimerData Data => _data;
-
-        private DeltaTimeTimer()
-        { }
-
-        public static DeltaTimeTimer Create(float interval, int loopCount = 1, InvokeMode invokeMode = InvokeMode.Single, bool unscaledTime = false, PlayerLoopTiming playerLoopTiming = PlayerLoopTiming.Update)
+        public float Interval
         {
-            var timer = new DeltaTimeTimer();
-            timer.Init(interval, loopCount, invokeMode, unscaledTime, playerLoopTiming);
-            return timer;
+            get => _data.Interval;
+            set => _data.Interval = value;
         }
 
-        public static DeltaTimeTimer Create(float interval, Func<float> getDeltaTime, int loopCount = 1, InvokeMode invokeMode = InvokeMode.Single, PlayerLoopTiming playerLoopTiming = PlayerLoopTiming.Update)
+        public float ElapsedTime
         {
-            var timer = new DeltaTimeTimer();
-            timer.Init(interval, getDeltaTime, loopCount, invokeMode, playerLoopTiming);
-            return timer;
+            get => _data.ElapsedTime;
+            set
+            {
+                _data.ElapsedTime = value;
+                SetInitialized();
+            }
         }
 
-        public void Init(float interval, int loopCount, InvokeMode invokeMode, bool unscaledTime, PlayerLoopTiming playerLoopTiming)
+        public void SetDeltaTimeFunction(bool unscaled)
         {
-            _getDeltaTime = unscaledTime
-                ? GetDeltaTimeStrategies.GetUnscaledDeltaTime
-                : GetDeltaTimeStrategies.GetScaledDeltaTime;
-            Init(interval, _getDeltaTime, loopCount, invokeMode, playerLoopTiming);
+            _getDeltaTime = GetDeltaTimeStrategies.GetDeltaTimeStrategy(unscaled);
         }
 
-        public void Init(float interval, Func<float> getDeltaTime, int loopCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
+        public void SetDeltaTimeFunction(Func<float> getDeltaTime)
         {
-            Stop();
-
-            _data.ElapsedTime = 0f;
-            _data.CompletedTicks = 0;
-            _data.Interval = interval;
-            _data.TotalTicks = loopCount;
-
-            _tickData.Reset();
-
-            _invokeMode = invokeMode;
             _getDeltaTime = getDeltaTime;
-            _playerLoopTiming = playerLoopTiming;
         }
 
+        public DeltaTimeTimer()
+        {
+            _getDeltaTime = GetDeltaTimeStrategies.GetDeltaTimeStrategy(false);
+        }
 
         protected override void OnFirstStart()
         {
             _data.ElapsedTime = 0;
-            _data.CompletedTicks = 0;
         }
 
         protected override void OnReset()
         {
             _data.ElapsedTime = 0;
-            _data.CompletedTicks = 0;
         }
 
         protected override TimerProcessor GetProcessor(Action onFinished)
-            => DeltaTimeProcessor.Create(_data, _tickData, _getDeltaTime, _elapsed, onFinished);
+            => DeltaTimeProcessor.Create(_data, _tickData, _tickInfo, ref _getDeltaTime, onFinished);
     }
 }

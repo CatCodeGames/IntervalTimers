@@ -1,79 +1,88 @@
 ﻿using System;
+using UnityEditorInternal.Profiling.Memory.Experimental;
 using UnityEngine;
 using UnityEngine.Pool;
 
 namespace CatCode.Timers
 {
-    public class RealtimeProcessor : TimerProcessor
+    public sealed class RealtimeProcessor : TimerProcessor
     {
-        public Func<float> GetTime;
-        public RealtimeTimerData Data;
+        private static readonly ObjectPool<RealtimeProcessor> _pool = new(() => new());
 
-        protected void Init(RealtimeTimerData data, TimerTickData tickData, Func<float> getTime, Action onElapsed, Action onFinished)
+        public static RealtimeProcessor Create(RealtimeTimerData timerData, TimerTickData tickData, TimerTickInfo tickInfo, ref Func<float> getTime, Action onFinished)
         {
-            Data = data;
+            var result = _pool.Get();
+            result.Init(timerData, tickData, tickInfo, ref getTime, onFinished);
+            return result;
+        }
+
+
+        public RealtimeTimerData TimerData;
+        public Func<float> GetTime;
+
+        private RealtimeProcessor() { }
+
+
+        private void Init(RealtimeTimerData timerData, TimerTickData tickData, TimerTickInfo tickInfo, ref Func<float> getTime, Action onFinished)
+        {
             TickData = tickData;
+            TickInfo = tickInfo;
+            TimerData = timerData;
             GetTime = getTime;
-            OnElapsed = onElapsed;
             OnFinished = onFinished;
         }
 
-        protected void Reset()
+        private void Reset()
         {
-            Data = null;
             TickData = null;
+            TickInfo = null;
+            TimerData = null;
             GetTime = null;
-            OnElapsed = null;
             OnFinished = null;
         }
 
 
-        private static readonly ObjectPool<RealtimeProcessor> _pool = new(() => new());
-
-        public static RealtimeProcessor Create(RealtimeTimerData data, TimerTickData tickData, Func<float> getTime, Action onElapsed, Action onFinished)
-        {
-            var result = _pool.Get();
-            result.Init(data, tickData, getTime, onElapsed, onFinished);
-            return result;
-        }
 
         protected override bool MoveNextCore()
         {
             var time = GetTime();
-            var elapsedTime = time - Data.LastTime;
-            if (elapsedTime < Data.Interval)
+            var elapsedTime = time - TimerData.LastTime;
+            if (elapsedTime < TimerData.Interval)
                 return true;
 
-
-            if (Data.TotalTicks < 0)
+            if (TickData.TotalTicks < 0)
             {
-                return InvokeMode == InvokeMode.Multi
+                return TickData.InvokeMode == InvokeMode.Multi
                     ? InfinityMultiInvoke(time)
                     : InfinitySingleInvoke(time);
             }
             else
             {
-                return InvokeMode == InvokeMode.Multi
+                return TickData.InvokeMode == InvokeMode.Multi
                     ? LimitedMultiInvoke(time)
                     : LimitedSingleInvoke(time);
             }
         }
 
+
         private bool InfinityMultiInvoke(float time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var ticks = Mathf.FloorToInt(elapsedTime / Data.Interval);
+            var elapsedTime = time - TimerData.LastTime;
+            var interval = TimerData.Interval;
+
+            var ticks = Mathf.FloorToInt(elapsedTime / interval);
 
             return ProcessTicks(ticks);
         }
 
         private bool LimitedMultiInvoke(float time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var completedTicks = Data.CompletedTicks;
-            var totalTicks = Data.TotalTicks;
+            var elapsedTime = time - TimerData.LastTime;
+            var interval = TimerData.Interval;
+            var completedTicks = TickData.CompletedTicks;
+            var totalTicks = TickData.TotalTicks;
 
-            var ticks = Mathf.FloorToInt(elapsedTime / Data.Interval);
+            var ticks = Mathf.FloorToInt(elapsedTime / interval);
             var newCompletedTicks = completedTicks + ticks;
 
             if (newCompletedTicks >= totalTicks)
@@ -90,17 +99,19 @@ namespace CatCode.Timers
 
         private bool ProcessTicks(int ticks)
         {
-            var lastTime = Data.LastTime;
+            var lastTime = TimerData.LastTime;
+            var interval = TimerData.Interval;
+
             var result = true;
 
-            TickData.TicksPerFrame = ticks;
+            TickInfo.TicksPerFrame = ticks;
             for (int i = 0; i < ticks; i++)
             {
-                TickData.TickNumber = i + 1;
-                Data.LastTime = lastTime + (i + 1) * Data.Interval;
-                Data.CompletedTicks++;
+                TimerData.LastTime = lastTime + (i + 1) * interval;
+                TickInfo.TickIndex = i;
+                TickData.CompletedTicks++;
 
-                OnElapsed?.Invoke();
+                TickData.OnTick?.Invoke();
 
                 if (!IsActive)
                 {
@@ -108,51 +119,58 @@ namespace CatCode.Timers
                     break;
                 }
             }
-            TickData.Reset();
+            TickInfo.Reset();
+
             return result;
         }
 
 
         private bool InfinitySingleInvoke(float time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var ticks = Mathf.FloorToInt(elapsedTime / Data.Interval);
+            var elapsedTime = time - TimerData.LastTime;
+            var interval = TimerData.Interval;
 
-            TickData.TicksPerFrame = ticks;
-            TickData.TickNumber = 0;
-            Data.CompletedTicks++;
-            Data.LastTime += ticks * Data.Interval;
+            var ticks = Mathf.FloorToInt(elapsedTime / interval);
 
-            OnElapsed?.Invoke();
+            TimerData.LastTime += ticks * interval;
+            TickInfo.TicksPerFrame = ticks;
+            TickInfo.TickIndex = -1;
+            TickData.CompletedTicks++;
 
-            TickData.Reset();
+            TickData.OnTick?.Invoke();
+
+            TickInfo.Reset();
+
             return true;
         }
 
         private bool LimitedSingleInvoke(float time)
         {
-            var completedTicks = Data.CompletedTicks;
-            var totalTicks = Data.TotalTicks;
+            var completedTicks = TickData.CompletedTicks;
+            var totalTicks = TickData.TotalTicks;
 
-            var elapsedTime = time - Data.LastTime;
-            var ticks = Mathf.FloorToInt(elapsedTime / Data.Interval);
+            var elapsedTime = time - TimerData.LastTime;
+            var interval = TimerData.Interval;
+
+            var ticks = Mathf.FloorToInt(elapsedTime / interval);
 
             var newCompletedTicks = completedTicks + ticks;
             if (newCompletedTicks >= totalTicks)
                 ticks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-            time = Data.LastTime + ticks * Data.Interval;
+            time = TimerData.LastTime + ticks * interval;
 
-            TickData.TicksPerFrame = ticks;
-            TickData.TickNumber = 0;
-            Data.CompletedTicks += ticks;
-            Data.LastTime = time;
+            TimerData.LastTime = time;
+            TickInfo.TicksPerFrame = ticks;
+            TickInfo.TickIndex = -1;
+            TickData.CompletedTicks += ticks;
 
-            OnElapsed?.Invoke();
+            TickData.OnTick?.Invoke();
 
-            TickData.Reset();
-            return Data.CompletedTicks < Data.TotalTicks;
+            TickInfo.Reset();
 
+            return TickData.CompletedTicks < TickData.TotalTicks;
         }
+
 
         protected override void OnStopped()
         {

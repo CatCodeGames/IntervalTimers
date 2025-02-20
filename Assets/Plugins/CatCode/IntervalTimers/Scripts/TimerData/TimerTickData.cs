@@ -1,14 +1,18 @@
-﻿namespace CatCode.Timers
+﻿using System;
+
+namespace CatCode.Timers
 {
     public sealed class TimerTickData
     {
-        public int TicksPerFrame;
-        public int TickNumber;
+        public int CompletedTicks;
+        public int TotalTicks;
 
-        public void Reset()
-        {
-            TicksPerFrame = 0;
-            TickNumber = 0;
+        public InvokeMode InvokeMode;
+        public Action OnTick;
+
+        public void Reset() 
+        { 
+            CompletedTicks = 0;
         }
     }
 }

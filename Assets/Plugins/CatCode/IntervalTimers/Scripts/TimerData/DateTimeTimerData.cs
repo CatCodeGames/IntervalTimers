@@ -7,7 +7,6 @@ namespace CatCode.Timers
         public DateTime LastTime;
         public TimeSpan Interval;
 
-        public int CompletedTicks;
-        public int TotalTicks;
+        public Func<DateTime> GetTime;
     }
 }

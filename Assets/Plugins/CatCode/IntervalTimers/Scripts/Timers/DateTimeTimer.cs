@@ -1,68 +1,53 @@
-﻿using Cysharp.Threading.Tasks;
-using System;
+﻿using System;
 
 namespace CatCode.Timers
 {
     public sealed class DateTimeTimer : IntervalTimer
     {
+        public static DateTime GetDateTime() => DateTime.Now;
+
         private readonly DateTimeTimerData _data = new();
         private Func<DateTime> _getTime;
 
-        public DateTimeTimerData Data => _data;
-
-        private static DateTime GetDateTime() => DateTime.Now;
-
-        public static DateTimeTimer Create(TimeSpan interval, int loopsCount = 1, InvokeMode invokeMode = InvokeMode.Single, PlayerLoopTiming playerLoopTiming = PlayerLoopTiming.Update)
+        public DateTime LastTime
         {
-            var timer = new DateTimeTimer();
-            timer.Init(interval, loopsCount, invokeMode, playerLoopTiming);
-            return timer;
+            get => _data.LastTime;
+            set
+            {
+                _data.LastTime = value;
+                SetInitialized();
+            }
         }
 
-        public static DateTimeTimer Create(TimeSpan interval, Func<DateTime> getTime, int loopsCount = 1, InvokeMode invokeMode = InvokeMode.Single, PlayerLoopTiming playerLoopTiming = PlayerLoopTiming.Update)
+        public TimeSpan Interval
         {
-            var timer = new DateTimeTimer();
-            timer.Init(interval, getTime, loopsCount, invokeMode, playerLoopTiming);
-            return timer;
+            get => _data.Interval;
+            set => _data.Interval = value;
         }
 
-        private DateTimeTimer() { }
-
-        public void Init(TimeSpan interval, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
+        public void SetTimeFunction(Func<DateTime> getTime)
         {
-            Init(interval, GetDateTime, loopsCount, invokeMode, playerLoopTiming);
-        }
-
-        public void Init(TimeSpan interval, Func<DateTime> getTime, int loopsCount, InvokeMode invokeMode, PlayerLoopTiming playerLoopTiming)
-        {
-            Stop();
-
-            _data.LastTime = DateTime.MinValue;
-            _data.CompletedTicks = 0;
-            _data.Interval = interval;
-            _data.TotalTicks = loopsCount;
-
-            _tickData.Reset();
-
-            _invokeMode = invokeMode;
             _getTime = getTime;
-            _playerLoopTiming = playerLoopTiming;
         }
 
+        public DateTimeTimer()
+        {
+            _getTime = GetDateTime;
+        }
 
         protected override void OnFirstStart()
         {
-            _data.LastTime = _getTime();
-            _data.CompletedTicks = 0;
+            _data.LastTime = _data.GetTime();
+            _tickData.CompletedTicks = 0;
         }
 
         protected override void OnReset()
         {
             _data.LastTime = DateTime.MinValue;
-            _data.CompletedTicks = 0;
+            _tickData.CompletedTicks = 0;
         }
 
         protected override TimerProcessor GetProcessor(Action onFinished)
-            => DateTimeProcessor.Create(_data, _tickData, _getTime, _elapsed, onFinished);
+            => DateTimeProcessor.Create(_data, _tickData, _tickInfo, ref _getTime, onFinished);
     }
 }

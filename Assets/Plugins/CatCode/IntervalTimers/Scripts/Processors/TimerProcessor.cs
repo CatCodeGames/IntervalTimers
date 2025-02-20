@@ -7,9 +7,8 @@ namespace CatCode.Timers
     {
         public bool IsActive;
         public Action OnFinished;
-        public Action OnElapsed;
-        public InvokeMode InvokeMode;
         public TimerTickData TickData;
+        public TimerTickInfo TickInfo;
 
         public bool MoveNext()
         {
@@ -24,8 +23,8 @@ namespace CatCode.Timers
             else
             {
                 IsActive = false;
-                OnFinished?.Invoke();
                 OnStopped();
+                OnFinished?.Invoke();
                 return false;
             }
         }

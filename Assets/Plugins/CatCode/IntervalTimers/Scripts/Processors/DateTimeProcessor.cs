@@ -6,53 +6,53 @@ namespace CatCode.Timers
 {
     public sealed class DateTimeProcessor : TimerProcessor
     {
-        public Func<DateTime> GetTime;
-        public DateTimeTimerData Data;
+        private static readonly ObjectPool<DateTimeProcessor> _pool = new(() => new());
 
-        private void Init(DateTimeTimerData data, TimerTickData tickData, Func<DateTime> getTime, Action onElapsed, Action onFinished)
+        public static DateTimeProcessor Create(DateTimeTimerData timerData, TimerTickData tickData, TimerTickInfo tickInfo, ref Func<DateTime> getTime, Action onFinished)
         {
-            Data = data;
+            var result = _pool.Get();
+            result.Init(timerData, tickData, tickInfo, ref getTime, onFinished);
+            return result;
+        }
+
+        public DateTimeTimerData TimerData;
+        public Func<DateTime> GetTime;
+
+        private void Init(DateTimeTimerData timerData, TimerTickData tickData, TimerTickInfo tickInfo, ref Func<DateTime> getTime, Action onFinished)
+        {
             TickData = tickData;
+            TickInfo = tickInfo;
+            TimerData = timerData;
             GetTime = getTime;
-            OnElapsed = onElapsed;
             OnFinished = onFinished;
         }
 
         private void Reset()
         {
-            Data = null;
             TickData = null;
+            TickInfo = null;
+            TimerData = null;
             GetTime = null;
-            OnElapsed = null;
             OnFinished = null;
         }
 
-        private static readonly ObjectPool<DateTimeProcessor> _pool = new(() => new());
-
-        public static DateTimeProcessor Create(DateTimeTimerData data, TimerTickData tickData, Func<DateTime> getTime, Action onElapsed, Action onFinished)
-        {
-            var result = _pool.Get();
-            result.Init(data, tickData, getTime, onElapsed, onFinished);
-            return result;
-        }
 
         protected override bool MoveNextCore()
         {
             var time = GetTime();
-            var elapsedTime = time - Data.LastTime;
-            if (elapsedTime < Data.Interval)
+            var elapsedTime = time - TimerData.LastTime;
+            if (elapsedTime < TimerData.Interval)
                 return true;
 
-
-            if (Data.TotalTicks < 0)
+            if (TickData.TotalTicks < 0)
             {
-                return InvokeMode == InvokeMode.Multi
+                return TickData.InvokeMode == InvokeMode.Multi
                     ? InfinityMultiInvoke(time)
                     : InfinitySingleInvoke(time);
             }
             else
             {
-                return InvokeMode == InvokeMode.Multi
+                return TickData.InvokeMode == InvokeMode.Multi
                     ? LimitedMultiInvoke(time)
                     : LimitedSingleInvoke(time);
             }
@@ -60,18 +60,18 @@ namespace CatCode.Timers
 
         private bool InfinityMultiInvoke(DateTime time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var ticks = (int)Math.Floor(elapsedTime.TotalMilliseconds / Data.Interval.TotalMilliseconds);
+            var elapsedTime = time - TimerData.LastTime;
+            var ticks = (int)Math.Floor(elapsedTime.TotalMilliseconds / TimerData.Interval.TotalMilliseconds);
             return ProcessTicks(ticks);
         }
 
         private bool LimitedMultiInvoke(DateTime time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var completedTicks = Data.CompletedTicks;
-            var totalTicks = Data.TotalTicks;
+            var elapsedTime = time - TimerData.LastTime;
+            var completedTicks = TickData.CompletedTicks;
+            var totalTicks = TickData.TotalTicks;
 
-            var ticks = (int)(elapsedTime / Data.Interval);
+            var ticks = (int)(elapsedTime / TimerData.Interval);
             var newCompletedTicks = completedTicks + ticks;
 
             if (newCompletedTicks >= totalTicks)
@@ -88,17 +88,17 @@ namespace CatCode.Timers
 
         private bool ProcessTicks(int ticks)
         {
-            var lastTime = Data.LastTime;
+            var lastTime = TimerData.LastTime;
             var result = true;
 
-            TickData.TicksPerFrame = ticks;
+            TickInfo.TicksPerFrame = ticks;
             for (int i = 0; i < ticks; i++)
             {
-                TickData.TickNumber = i + 1;
-                Data.LastTime = lastTime + (i + 1) * Data.Interval;
-                Data.CompletedTicks++;
+                TickInfo.TickIndex = i;
+                TimerData.LastTime = lastTime + (i + 1) * TimerData.Interval;
+                TickData.CompletedTicks++;
 
-                OnElapsed?.Invoke();
+                TickData.OnTick?.Invoke();
 
                 if (!IsActive)
                 {
@@ -106,51 +106,51 @@ namespace CatCode.Timers
                     break;
                 }
             }
-            TickData.Reset();
+            TickInfo.Reset();
             return result;
         }
 
 
         private bool InfinitySingleInvoke(DateTime time)
         {
-            var elapsedTime = time - Data.LastTime;
-            var ticks = (int)Math.Floor(elapsedTime / Data.Interval);
+            var elapsedTime = time - TimerData.LastTime;
+            var ticks = (int)Math.Floor(elapsedTime / TimerData.Interval);
 
-            TickData.TicksPerFrame = ticks;
-            TickData.TickNumber = 0;
-            Data.CompletedTicks++;
-            Data.LastTime += ticks * Data.Interval;
+            TickInfo.TicksPerFrame = ticks;
+            TickInfo.TickIndex = -1;
+            TickData.CompletedTicks++;
+            TimerData.LastTime += ticks * TimerData.Interval;
 
-            OnElapsed?.Invoke();
+            TickData.OnTick?.Invoke();
 
-            TickData.Reset();
+            TickInfo.Reset();
             return true;
         }
 
         private bool LimitedSingleInvoke(DateTime time)
         {
-            var completedTicks = Data.CompletedTicks;
-            var totalTicks = Data.TotalTicks;
+            var completedTicks = TickData.CompletedTicks;
+            var totalTicks = TickData.TotalTicks;
 
-            var elapsedTime = time - Data.LastTime;
-            var ticks = (int)Math.Floor(elapsedTime / Data.Interval);
+            var elapsedTime = time - TimerData.LastTime;
+            var ticks = (int)Math.Floor(elapsedTime / TimerData.Interval);
 
             var newCompletedTicks = completedTicks + ticks;
             if (newCompletedTicks >= totalTicks)
             {
                 ticks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                time = Data.LastTime + ticks * Data.Interval;
+                time = TimerData.LastTime + ticks * TimerData.Interval;
             }
 
-            TickData.TicksPerFrame = ticks;
-            TickData.TickNumber = 0;
-            Data.CompletedTicks += ticks;
-            Data.LastTime = time;
+            TickInfo.TicksPerFrame = ticks;
+            TickInfo.TickIndex = -1;
+            TickData.CompletedTicks += ticks;
+            TimerData.LastTime = time;
 
-            OnElapsed?.Invoke();
+            TickData.OnTick?.Invoke();
 
-            TickData.Reset();
-            return Data.CompletedTicks < Data.TotalTicks;
+            TickInfo.Reset();
+            return TickData.CompletedTicks < TickData.TotalTicks;
         }
 
 
