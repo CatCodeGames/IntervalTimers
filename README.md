@@ -115,15 +115,20 @@ When the timer's interval is shorter than the frame time, this parameter defines
 ### InvokeMode.Multi
 In this mode, the `Elapsed` event is called multiple times within a single frame. The `TickData` property provides information on how many times the timer has triggered and the sequence number of the current event.
 ``` csharp
-    float interval = 0.005f;
-    int loopCount = 5;
-    
-    var timer = DeltaTimeTimer.Create(interval, loopCount, invokeMode: InvokeMode.Multi);
-    timer.Started += ()=> Debug.Log($"Timer started at {Time.time}");
-    timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-    timer.Elapsed += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.Data.LastTime}. Ticks - {timer.TickData.TickNumber + 1}/{timer.TickData.TicksPerFrame}");
+float interval = 0.005f;
+int ticksCount = 5;
 
-    timer.Start();
+var timer = new RealtimeTimer()
+{
+    Interval = interval,
+    TotalTicks = ticksCount,
+    InvokeMode = InvokeMode.Multi
+};
+timer.Started += () => Debug.Log($"Timer started at {Time.time}");
+timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+
+timer.Start();
 ```
 Output
 ```
@@ -138,15 +143,20 @@ Output
 ### InvokeMode.Single
 In this mode, the `Elapsed` method is called once per frame. The `TickData` properties provide information only about the number of timer triggers.
 ``` csharp
-    float interval = 0.005f;
-    int loopCount = 5;
-    
-    var timer = DeltaTimeTimer.Create(interval, loopCount, invokeMode: InvokeMode.Single);
-    timer.Started += ()=> Debug.Log($"Timer started at {Time.time}");
-    timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-    timer.Elapsed += () => Debug.Log($"Current time - {Time.time}. Ticks - {timer.TickData.TicksPerFrame}");
+float interval = 0.005f;
+int ticksCount = 5;
 
-    timer.Start();
+var timer = new RealtimeTimer()
+{
+    Interval = interval,
+    TotalTicks = ticksCount,
+    InvokeMode = InvokeMode.Single
+};
+timer.Started += () => Debug.Log($"Timer started at {Time.time}");
+timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+
+timer.Start();
 ```
 Output
 ```
@@ -278,15 +288,20 @@ Output
 ### InvokeMode.Multi
 В этом режиме событие `Elapsed` будет вызываться несколько раз в течении одного кадра. Свойство `TickData` позволяет получить информацию о количестве срабатываний таймера за кадр и номер текущего события.
 ``` csharp
-    float interval = 0.005f;
-    int loopCount = 5;
-    
-    var timer = DeltaTimeTimer.Create(interval, loopCount, invokeMode: InvokeMode.Multi);
-    timer.Started += ()=> Debug.Log($"Timer started at {Time.time}");
-    timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-    timer.Elapsed += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.Data.LastTime}. Ticks - {timer.TickData.TickNumber + 1}/{timer.TickData.TicksPerFrame}");
+float interval = 0.005f;
+int ticksCount = 5;
 
-    timer.Start();
+var timer = new RealtimeTimer()
+{
+    Interval = interval,
+    TotalTicks = ticksCount,
+    InvokeMode = InvokeMode.Multi
+};
+timer.Started += () => Debug.Log($"Timer started at {Time.time}");
+timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+
+timer.Start();
 ```
 Вывод
 ```
@@ -301,15 +316,20 @@ Output
 ### InvokeMode.Single
 В этом режиме событие `Elapsed` будет вызываться один раз в течении одного кадра. Свойство `TickData` позволяет получить информацию только о коичестве срабатываний таймера.
 ``` csharp
-    float interval = 0.005f;
-    int loopCount = 5;
-    
-    var timer = DeltaTimeTimer.Create(interval, loopCount, invokeMode: InvokeMode.Single);
-    timer.Started += ()=> Debug.Log($"Timer started at {Time.time}");
-    timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-    timer.Elapsed += () => Debug.Log($"Current time - {Time.time}. Ticks - {timer.TickData.TicksPerFrame}");
+float interval = 0.005f;
+int ticksCount = 5;
 
-    timer.Start();
+var timer = new RealtimeTimer()
+{
+    Interval = interval,
+    TotalTicks = ticksCount,
+    InvokeMode = InvokeMode.Single
+};
+timer.Started += () => Debug.Log($"Timer started at {Time.time}");
+timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+
+timer.Start();
 ```
 Вывод
 ```
