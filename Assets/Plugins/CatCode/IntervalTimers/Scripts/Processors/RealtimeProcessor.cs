@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEditorInternal.Profiling.Memory.Experimental;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -93,7 +92,9 @@ namespace CatCode.Timers
             }
             else
             {
-                return ProcessTicks(ticks);
+                var result = ProcessTicks(ticks);
+                TimerData.LastTime = time - time % interval;
+                return result;
             }
         }
 
@@ -120,7 +121,6 @@ namespace CatCode.Timers
                 }
             }
             TickInfo.Reset();
-
             return result;
         }
 
