@@ -45,9 +45,7 @@ namespace CatCode.Timers
                 result = false;
             }
 
-            //TimerData.ElapsedTime = remainingTime;
-            TimerData.ElapsedTime = 0;
-
+            TimerData.ElapsedTime = remainingTime;
 
             TickInfo.TicksCount = ticks;
             TickData.CompletedTicks += ticks;

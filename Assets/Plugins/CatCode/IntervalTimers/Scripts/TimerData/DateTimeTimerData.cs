@@ -6,7 +6,5 @@ namespace CatCode.Timers
     {
         public DateTime LastTime;
         public TimeSpan Interval;
-
-        public Func<DateTime> GetTime;
     }
 }

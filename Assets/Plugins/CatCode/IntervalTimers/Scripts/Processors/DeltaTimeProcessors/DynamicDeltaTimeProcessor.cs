@@ -33,7 +33,7 @@ namespace CatCode.Timers
                 TickData.CompletedTicks++;
                 TickData.OnTick?.Invoke();
 
-                if (!IsActive || (TickData.TotalTicks >0 && TickData.CompletedTicks >= TickData.TotalTicks))
+                if (!IsActive || (TickData.TotalTicks > 0 && TickData.CompletedTicks >= TickData.TotalTicks))
                 {
                     TickInfo.TicksCount = 0;
                     return false;

@@ -38,7 +38,7 @@ namespace CatCode.Timers
 
         protected override void OnFirstStart()
         {
-            _data.LastTime = _data.GetTime();
+            _data.LastTime = _getTime();
             _tickData.CompletedTicks = 0;
         }
 
