@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using CatCode.Timers;
 using System;
 
 namespace CatCode.Timers
@@ -24,6 +24,12 @@ namespace CatCode.Timers
             }
         }
 
+        public DeltaTimeTimer()
+        {
+            _getDeltaTime = GetDeltaTimeStrategies.GetDeltaTimeStrategy(false);
+        }
+
+
         public void SetDeltaTimeFunction(bool unscaled)
         {
             _getDeltaTime = GetDeltaTimeStrategies.GetDeltaTimeStrategy(unscaled);
@@ -34,10 +40,6 @@ namespace CatCode.Timers
             _getDeltaTime = getDeltaTime;
         }
 
-        public DeltaTimeTimer()
-        {
-            _getDeltaTime = GetDeltaTimeStrategies.GetDeltaTimeStrategy(false);
-        }
 
         protected override void OnFirstStart()
         {
@@ -50,6 +52,20 @@ namespace CatCode.Timers
         }
 
         protected override TimerProcessor GetProcessor(Action onFinished)
-            => DeltaTimeProcessor.Create(_data, _tickData, _tickInfo, ref _getDeltaTime, onFinished);
+        {
+            var processor = CreateProcessor(_mode);
+            processor.Init(_data, _tickData, _tickInfo, ref _getDeltaTime, onFinished);
+            return processor;
+        }
+
+
+        private DeltaTimeProcessor CreateProcessor(TimerMode mode)
+            => mode switch
+            {
+                TimerMode.Dynamic => DynamicDeltaTimeProcessor.Create(),
+                TimerMode.Multi => MultiInvokeDeltaTimeProcessor.Create(),
+                TimerMode.Single => SingleInvokeDeltaTimeProcessor.Create(),
+                _ => DynamicDeltaTimeProcessor.Create(),
+            };
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CatCode.Timers;
+using System;
 
 namespace CatCode.Timers
 {
@@ -23,16 +24,18 @@ namespace CatCode.Timers
             set => _timerData.Interval = value;
         }
 
+
+        public RealtimeTimer()
+        {
+            _getTime = GetRealtimeStrategies.GetTime(RealtimeMode.Scaled);
+        }
+
         public void SetTimeFunction(RealtimeMode mode)
             => _getTime = GetRealtimeStrategies.GetTime(mode);
 
         public void SetTimeFunction(Func<float> getTime)
             => _getTime = getTime;
 
-        public RealtimeTimer()
-        {
-            _getTime = GetRealtimeStrategies.GetTime(RealtimeMode.Scaled);
-        }
 
         protected override void OnFirstStart()
         {
@@ -47,6 +50,20 @@ namespace CatCode.Timers
         }
 
         protected override TimerProcessor GetProcessor(Action onFinished)
-            => RealtimeProcessor.Create(_timerData, _tickData, _tickInfo, ref _getTime, onFinished);
+        {
+            var processor = CreateProcessor(_mode);
+            processor.Init(_timerData, _tickData, _tickInfo, ref _getTime, onFinished);
+            return processor;
+        }
+
+        private RealtimeProcessor CreateProcessor(TimerMode mode)
+            => mode switch
+            {
+                TimerMode.Dynamic => DynamicRealtimeProcessor.Create(),
+                TimerMode.Multi => MultiInvokeRealtimeProcessor.Create(),
+                TimerMode.Single => SingleInvokeRealtimeProcessor.Create(),
+                _ => DynamicRealtimeProcessor.Create()
+            };
+
     }
 }

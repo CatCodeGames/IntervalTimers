@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CatCode.Timers;
+using System;
 
 namespace CatCode.Timers
 {
@@ -48,6 +49,19 @@ namespace CatCode.Timers
         }
 
         protected override TimerProcessor GetProcessor(Action onFinished)
-            => DateTimeProcessor.Create(_data, _tickData, _tickInfo, ref _getTime, onFinished);
+        {
+            var processor = CreateProcessor(_mode);
+            processor.Init(_data, _tickData, _tickInfo, ref _getTime, onFinished);
+            return processor;
+        }
+
+        private DateTimeProcessor CreateProcessor(TimerMode mode)
+            => mode switch
+            {
+                TimerMode.Dynamic => DynamicDateTimeProcessor.Create(),
+                TimerMode.Multi => MultiInvokeDateTimeProcessor.Create(),
+                TimerMode.Single => SingleInvokeDateTimeProcessor.Create(),
+                _ => DynamicDateTimeProcessor.Create(),
+            };
     }
 }

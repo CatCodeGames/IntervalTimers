@@ -6,8 +6,9 @@ namespace CatCode.Timers
     public abstract class IntervalTimer
     {
         private TimerState _state = TimerState.Idle;
-        protected PlayerLoopTiming _playerLoopTiming = PlayerLoopTiming.Update;
+        private PlayerLoopTiming _playerLoopTiming = PlayerLoopTiming.Update;
 
+        protected TimerMode _mode = TimerMode.Dynamic;
         protected TimerProcessor _processor;
 
         protected readonly TimerTickData _tickData = new();
@@ -42,10 +43,10 @@ namespace CatCode.Timers
             set => _tickData.TotalTicks = value;
         }
 
-        public InvokeMode InvokeMode
+        public TimerMode Mode
         {
-            get => _tickData.InvokeMode;
-            set => _tickData.InvokeMode = value;
+            get => _mode;
+            set => _mode = value;
         }
 
         public PlayerLoopTiming PlayerLoopTimiming
@@ -64,8 +65,7 @@ namespace CatCode.Timers
             }
         }
 
-        public int TickIndex => _tickInfo.TickIndex;
-        public int TicksPerFrame => _tickInfo.TicksPerFrame;
+        public int TicksCount => _tickInfo.TicksCount;
 
         public event Action Started;
         public event Action Stopped;

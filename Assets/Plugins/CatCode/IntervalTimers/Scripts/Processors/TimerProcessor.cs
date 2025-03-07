@@ -23,8 +23,8 @@ namespace CatCode.Timers
             else
             {
                 IsActive = false;
-                OnStopped();
                 OnFinished?.Invoke();
+                OnStopped();
                 return false;
             }
         }
@@ -32,5 +32,4 @@ namespace CatCode.Timers
         protected abstract bool MoveNextCore();
         protected abstract void OnStopped();
     }
-
 }
