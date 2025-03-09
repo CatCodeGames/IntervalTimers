@@ -65,11 +65,12 @@ Base class for timers.
 - `Interval` - The time interval after which the timer triggers the `Tick` event.
 - `CompletedTicks` - The current number of times the timer has triggered.
 - `TotalTicks` - The total number of times the timer will trigger before stopping. `-1` indicates an infinite loop.
-- InvokeMode` - Event invocation mode for the `Tick` event. Used when the timer needs to trigger multiple times within a single frame.- `playerLoopTiming` - Determines which game loop (e.g., Update, FixedUpdate, etc.) the timer will use.
+-`Mode` – Timer operation mode.
+	-`Single` – The event is triggered no more than once per frame, even if the timer elapsed multiple times during that frame. To determine how many times the timer elapsed within a frame, use the FrameTicksCount property in the event handler.
+	-`MultiplePrecalc` – The event can be triggered multiple times per frame. The number of timer elapses is calculated in advance.
+	-`MultipleDynamic` – The event can be triggered multiple times per frame. The number of timer elapses is not calculated in advance and depends on changes to timer parameters (such as Interval, ElapsedTime, or LastTime) that occur during the execution of event handlers.
+-`FrameTicksCount` – The number of times the timer elapsed within a single frame. Used in Single mode to determine how many timer elapses occurred during the frame.
 - `State` - Timer state.
-Properties сontains information about the last trigger of the timer. If the timer can trigger multiple times within a single frame, these properties allow you to determine the number of event invocations and their order.
-- `TicksPerFrame` - The number of times the timer triggers within a single frame.
-- `TickNumber` - The sequential number of the timer trigger in `InvokeMode.Multi`; always 0 in `InvokeMode.Single`.
 ### Methods
 - `Start()` - Starts or resumes the timer. If it's the first start, parameters are initialized automatically
 - `Stop()` - Stops the timer with the option to resume later.
@@ -113,7 +114,7 @@ Properties сontains information about the last trigger of the timer. If the tim
 ## InvokeMode
 When the timer's interval is shorter than the frame time, this parameter defines how the timer will trigger events.
 ### InvokeMode.Multi
-In this mode, the `Elapsed` event is called multiple times within a single frame. The `TickData` property provides information on how many times the timer has triggered and the sequence number of the current event.
+In this mode, the `Tick` event is called multiple times within a single frame.
 ``` csharp
 float interval = 0.005f;
 int ticksCount = 5;
@@ -122,26 +123,26 @@ var timer = new RealtimeTimer()
 {
     Interval = interval,
     TotalTicks = ticksCount,
-    InvokeMode = InvokeMode.Multi
+    Mode = TimerMode.MultipleDynamic
 };
 timer.Started += () => Debug.Log($"Timer started at {Time.time}");
 timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}.");
 
 timer.Start();
 ```
 Output
 ```
   Timer started at 19,02731
-  Current time - 19,03973. Scheduled time - 19,03231. Ticks - 1/2
-  Current time - 19,03973. Scheduled time - 19,03731. Ticks - 2/2
-  Current time - 19,05369. Scheduled time - 19,04231. Ticks - 1/3
-  Current time - 19,05369. Scheduled time - 19,04731. Ticks - 2/3
-  Current time - 19,05369. Scheduled time - 19,05231. Ticks - 3/3
+  Current time - 19,03973. Scheduled time - 19,03231.
+  Current time - 19,03973. Scheduled time - 19,03731.
+  Current time - 19,05369. Scheduled time - 19,04231.
+  Current time - 19,05369. Scheduled time - 19,04731.
+  Current time - 19,05369. Scheduled time - 19,05231.
   Timer finished at 19,05369
 ```
 ### InvokeMode.Single
-In this mode, the `Elapsed` method is called once per frame. The `TickData` properties provide information only about the number of timer triggers.
+In this mode, the `Tick` method is called once per frame. The `FrameTicksCount` properties provide information about the number of timer triggers.
 ``` csharp
 float interval = 0.005f;
 int ticksCount = 5;
@@ -150,11 +151,11 @@ var timer = new RealtimeTimer()
 {
     Interval = interval,
     TotalTicks = ticksCount,
-    InvokeMode = InvokeMode.Single
+    Mode = TimerMode.Single
 };
 timer.Started += () => Debug.Log($"Timer started at {Time.time}");
 timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.FrameTicksCount}");
 
 timer.Start();
 ```
@@ -237,13 +238,14 @@ Output
 - `Interval` - Интервал времени, по истечению которого таймер вызывает событие Tick.
 - `CompletedTicks` - Текущее количество срабатываний таймера.
 - `TotalTicks` - Количество раз сколько должен сработать таймер. -1 - бесконечный режим работы таймера.
-- `InvokeMode` - Режим вызова события Elapsed. В случае, если таймер должен сработать несколько раз за один кадр.
+- `Mode` - Режим работы таймера.
+	- `Single` - Событие вызывается не более одного раз за кадр, даже если таймер истекал несколько раз за этот период. Для получения информации о количестве срабатываний таймера за кадр используйте свойство `FrameTicksCount` в обработчике событий.
+	- `MultiplePrecalc` - Событие может быть вызвано несколько раз за кадр. Количество срабатываний таймера рассчитывается заранее.
+	- `MultipleDynamic` - Событие может быть вызвано несколько раз в одном кадре. Количество срабатываний не рассчитывается заранее и зависит от изменений параметров таймера (таких как `Interval`, `ElapsedTime` или `LastTime`), происходящих во время работы обработчиков событий.
+- `FrameTicksCount` - Количество срабатываний таймера за один кадр. Используется в режиме `Single` для определения, сколько раз таймер истекал в течение одного кадра
 - `PlayerLoopTimiming` - Определяет, в каком из игровых циклов (например, Update, FixedUpdate и т.д.) будет использоваться таймер.
 - `State` - Состояние таймера.
-Свойства, содержат информацию о последнем срабатывании таймера. Если таймер может сработать несколько раз в пределах одного кадра, эти свойство позволяет определить количество вызовов события и их порядок.
-- `TickIndex` - Порядковый номер срабатывания таймера в режиме InvokeMode.Multi; всегда -1 в режиме InvokeMode.Single
-- `TicksPerFrame` - Количество срабатываний таймера в пределах одного кадра.
-
+- 
 ### Методы
 - `Start()` - Запуск таймера или возобновление его работы
 - `Stop()` - Остановка таймера с возможностью его последующего возобновления.
@@ -255,7 +257,7 @@ Output
 - При остановке и последующем запуске продолжает работу без учета времени, когда таймер был остановлен.
 
 ### Свойства и методы
-- `ElapsedTime1 - Время с момента запуска или последнего срабатывания таймера.
+- `ElapsedTime` - Время с момента запуска или последнего срабатывания таймера.
 - `SetDeltaTimeFunction(bool unscaled)` - Позволяет указать какой тип времени использовать для обновления таймера: `Time.deltaTime` или `Time.unscaledDeltaTime`.
 - `SetDeltaTimeFunction(Func<float> getDeltaTime)` - Позволяет указать пользовательскую функцию, возвращающая интервал между текущим и предыдущим кадром.
 
@@ -283,10 +285,10 @@ Output
 
 &nbsp;
 # 4. Дополнительно
-## InvokeMode 
+## TimerMode 
 Если интервал срабатывания таймера меньше, чем интервал времени между кадрами, то этот параметр определяет как таймер будет вызывать событие.
-### InvokeMode.Multi
-В этом режиме событие `Elapsed` будет вызываться несколько раз в течении одного кадра. Свойство `TickData` позволяет получить информацию о количестве срабатываний таймера за кадр и номер текущего события.
+### InvokeMode.MultipleDynamic и MultiplePrecalc
+В этом режиме событие `Tick` будет вызываться несколько раз в течении одного кадра.
 ``` csharp
 float interval = 0.005f;
 int ticksCount = 5;
@@ -295,26 +297,26 @@ var timer = new RealtimeTimer()
 {
     Interval = interval,
     TotalTicks = ticksCount,
-    InvokeMode = InvokeMode.Multi
+    Mode = TimerMode.MultipleDynamic
 };
 timer.Started += () => Debug.Log($"Timer started at {Time.time}");
 timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}.");
 
 timer.Start();
 ```
 Вывод
 ```
   Timer started at 19,02731
-  Current time - 19,03973. Scheduled time - 19,03231. Ticks - 1/2
-  Current time - 19,03973. Scheduled time - 19,03731. Ticks - 2/2
-  Current time - 19,05369. Scheduled time - 19,04231. Ticks - 1/3
-  Current time - 19,05369. Scheduled time - 19,04731. Ticks - 2/3
-  Current time - 19,05369. Scheduled time - 19,05231. Ticks - 3/3
+  Current time - 19,03973. Scheduled time - 19,03231.
+  Current time - 19,03973. Scheduled time - 19,03731.
+  Current time - 19,05369. Scheduled time - 19,04231.
+  Current time - 19,05369. Scheduled time - 19,04731.
+  Current time - 19,05369. Scheduled time - 19,05231.
   Timer finished at 19,05369
 ```
 ### InvokeMode.Single
-В этом режиме событие `Elapsed` будет вызываться один раз в течении одного кадра. Свойство `TickData` позволяет получить информацию только о коичестве срабатываний таймера.
+В этом режиме событие `Tick` будет вызываться один раз в течении одного кадра. Свойство `FrameTicksCount` позволяет получить информацию о количестве срабатываний таймера.
 ``` csharp
 float interval = 0.005f;
 int ticksCount = 5;
@@ -323,11 +325,11 @@ var timer = new RealtimeTimer()
 {
     Interval = interval,
     TotalTicks = ticksCount,
-    InvokeMode = InvokeMode.Single
+    Mode = TimerMode.Single
 };
 timer.Started += () => Debug.Log($"Timer started at {Time.time}");
 timer.Completed += () => Debug.Log($"Timer finished at {Time.time}");
-timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.TickIndex + 1}/{timer.TicksPerFrame}");
+timer.Tick += () => Debug.Log($"Current time - {Time.time}. Scheduled time - {timer.LastTime}. Ticks - {timer.FrameTicksCount}");
 
 timer.Start();
 ```
@@ -338,3 +340,4 @@ timer.Start();
   Current time - 19,05369. Ticks - 3
   Timer finished at 19,05369
 ```
+
