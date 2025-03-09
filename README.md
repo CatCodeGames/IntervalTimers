@@ -65,10 +65,10 @@ Base class for timers.
 - `Interval` - The time interval after which the timer triggers the `Tick` event.
 - `CompletedTicks` - The current number of times the timer has triggered.
 - `TotalTicks` - The total number of times the timer will trigger before stopping. `-1` indicates an infinite loop.
--`Mode` – Timer operation mode.
-	-`Single` – The event is triggered no more than once per frame, even if the timer elapsed multiple times during that frame. To determine how many times the timer elapsed within a frame, use the FrameTicksCount property in the event handler.
-	-`MultiplePrecalc` – The event can be triggered multiple times per frame. The number of timer elapses is calculated in advance.
-	-`MultipleDynamic` – The event can be triggered multiple times per frame. The number of timer elapses is not calculated in advance and depends on changes to timer parameters (such as Interval, ElapsedTime, or LastTime) that occur during the execution of event handlers.
+- `Mode` – Timer operation mode.
+	- `Single` – The event is triggered no more than once per frame, even if the timer elapsed multiple times during that frame. To determine how many times the timer elapsed within a frame, use the FrameTicksCount property in the event handler.
+	- `MultiplePrecalc` – The event can be triggered multiple times per frame. The number of timer elapses is calculated in advance.
+	- `MultipleDynamic` – The event can be triggered multiple times per frame. The number of timer elapses is not calculated in advance and depends on changes to timer parameters (such as Interval, ElapsedTime, or LastTime) that occur during the execution of event handlers.
 -`FrameTicksCount` – The number of times the timer elapsed within a single frame. Used in Single mode to determine how many timer elapses occurred during the frame.
 - `State` - Timer state.
 ### Methods
