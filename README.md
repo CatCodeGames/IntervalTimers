@@ -111,9 +111,9 @@ Base class for timers.
 &nbsp;
 # 4. Additional Information
 
-## InvokeMode
+## TimerMode
 When the timer's interval is shorter than the frame time, this parameter defines how the timer will trigger events.
-### InvokeMode.Multi
+### TimerMode.Multi
 In this mode, the `Tick` event is called multiple times within a single frame.
 ``` csharp
 float interval = 0.005f;
@@ -141,7 +141,7 @@ Output
   Current time - 19,05369. Scheduled time - 19,05231.
   Timer finished at 19,05369
 ```
-### InvokeMode.Single
+### TimerMode.Single
 In this mode, the `Tick` method is called once per frame. The `FrameTicksCount` properties provide information about the number of timer triggers.
 ``` csharp
 float interval = 0.005f;
@@ -287,7 +287,7 @@ Output
 # 4. Дополнительно
 ## TimerMode 
 Если интервал срабатывания таймера меньше, чем интервал времени между кадрами, то этот параметр определяет как таймер будет вызывать событие.
-### InvokeMode.MultipleDynamic и MultiplePrecalc
+### TimerMode.MultipleDynamic и MultiplePrecalc
 В этом режиме событие `Tick` будет вызываться несколько раз в течении одного кадра.
 ``` csharp
 float interval = 0.005f;
@@ -315,7 +315,7 @@ timer.Start();
   Current time - 19,05369. Scheduled time - 19,05231.
   Timer finished at 19,05369
 ```
-### InvokeMode.Single
+### TimerMode.Single
 В этом режиме событие `Tick` будет вызываться один раз в течении одного кадра. Свойство `FrameTicksCount` позволяет получить информацию о количестве срабатываний таймера.
 ``` csharp
 float interval = 0.005f;
