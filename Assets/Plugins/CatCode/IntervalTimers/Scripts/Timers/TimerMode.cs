@@ -3,8 +3,8 @@ namespace CatCode.Timers
 {
     public enum TimerMode
     {
-        Dynamic,
-        Multi,
+        MultipleDynamic,
+        MultiplePrecalc,
         Single
     }
 }

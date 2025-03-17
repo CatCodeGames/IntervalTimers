@@ -58,8 +58,8 @@ namespace CatCode.Timers
         private DateTimeProcessor CreateProcessor(TimerMode mode)
             => mode switch
             {
-                TimerMode.Dynamic => DynamicDateTimeProcessor.Create(),
-                TimerMode.Multi => MultiInvokeDateTimeProcessor.Create(),
+                TimerMode.MultipleDynamic => DynamicDateTimeProcessor.Create(),
+                TimerMode.MultiplePrecalc => MultiInvokeDateTimeProcessor.Create(),
                 TimerMode.Single => SingleInvokeDateTimeProcessor.Create(),
                 _ => DynamicDateTimeProcessor.Create(),
             };

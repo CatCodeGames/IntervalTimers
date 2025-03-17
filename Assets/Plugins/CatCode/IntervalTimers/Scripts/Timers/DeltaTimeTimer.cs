@@ -62,8 +62,8 @@ namespace CatCode.Timers
         private DeltaTimeProcessor CreateProcessor(TimerMode mode)
             => mode switch
             {
-                TimerMode.Dynamic => DynamicDeltaTimeProcessor.Create(),
-                TimerMode.Multi => MultiInvokeDeltaTimeProcessor.Create(),
+                TimerMode.MultipleDynamic => DynamicDeltaTimeProcessor.Create(),
+                TimerMode.MultiplePrecalc => MultiInvokeDeltaTimeProcessor.Create(),
                 TimerMode.Single => SingleInvokeDeltaTimeProcessor.Create(),
                 _ => DynamicDeltaTimeProcessor.Create(),
             };

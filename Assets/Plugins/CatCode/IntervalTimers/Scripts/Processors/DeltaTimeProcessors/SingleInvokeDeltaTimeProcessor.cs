@@ -33,7 +33,7 @@ namespace CatCode.Timers
             var completedTicks = TickData.CompletedTicks;
             var totalTicks = TickData.TotalTicks;
 
-            var ticks = Mathf.FloorToInt(elapsedTime / interval);            
+            var ticks = Mathf.FloorToInt(elapsedTime / interval);
             var remainingTime = elapsedTime % interval;
             var newCompletedTicks = completedTicks + ticks;
 
@@ -41,7 +41,7 @@ namespace CatCode.Timers
             if (totalTicks > 0 && newCompletedTicks >= totalTicks)
             {
                 ticks = Mathf.Min(newCompletedTicks, totalTicks) - completedTicks;
-                remainingTime = ticks * interval;
+                remainingTime = elapsedTime - ticks * interval;
                 result = false;
             }
 

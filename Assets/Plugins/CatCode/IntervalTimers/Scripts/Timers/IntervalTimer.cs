@@ -8,7 +8,7 @@ namespace CatCode.Timers
         private TimerState _state = TimerState.Idle;
         private PlayerLoopTiming _playerLoopTiming = PlayerLoopTiming.Update;
 
-        protected TimerMode _mode = TimerMode.Dynamic;
+        protected TimerMode _mode = TimerMode.MultipleDynamic;
         protected TimerProcessor _processor;
 
         protected readonly TimerTickData _tickData = new();
@@ -43,6 +43,16 @@ namespace CatCode.Timers
             set => _tickData.TotalTicks = value;
         }
 
+        public int CompletedTicks
+        {
+            get => _tickData.CompletedTicks;
+            set
+            {
+                _tickData.CompletedTicks = value;
+                SetInitialized();
+            }
+        }
+
         public TimerMode Mode
         {
             get => _mode;
@@ -55,17 +65,7 @@ namespace CatCode.Timers
             set => _playerLoopTiming = value;
         }
 
-        public int CompletedTicks
-        {
-            get => _tickData.CompletedTicks;
-            set
-            {
-                _tickData.CompletedTicks = value;
-                SetInitialized();
-            }
-        }
-
-        public int TicksCount => _tickInfo.TicksCount;
+        public int FrameTicksCount => _tickInfo.TicksCount;
 
         public event Action Started;
         public event Action Stopped;

@@ -59,8 +59,8 @@ namespace CatCode.Timers
         private RealtimeProcessor CreateProcessor(TimerMode mode)
             => mode switch
             {
-                TimerMode.Dynamic => DynamicRealtimeProcessor.Create(),
-                TimerMode.Multi => MultiInvokeRealtimeProcessor.Create(),
+                TimerMode.MultipleDynamic => DynamicRealtimeProcessor.Create(),
+                TimerMode.MultiplePrecalc => MultiInvokeRealtimeProcessor.Create(),
                 TimerMode.Single => SingleInvokeRealtimeProcessor.Create(),
                 _ => DynamicRealtimeProcessor.Create()
             };
